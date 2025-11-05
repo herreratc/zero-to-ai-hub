@@ -1,79 +1,105 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, BookOpen, Award, Users } from "lucide-react";
+import { ArrowRight, BookOpen, Sparkles, Users, Shield } from "lucide-react";
 import heroImage from "@/assets/hero-ai.jpg";
+
+const stats = [
+  { value: "500+", label: "Carreiras aceleradas" },
+  { value: "50h", label: "de conteúdo aplicado" },
+  { value: "4.9/5", label: "Satisfação média" },
+];
 
 const Hero = () => {
   const handleCTA = () => {
     const message = encodeURIComponent("Olá! Gostaria de saber mais sobre o curso IA do Zero.");
-    window.open(`https://wa.me/5511999999999?text=${message}`, '_blank');
+    window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
   };
 
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden py-20">
-      <div 
-        className="absolute inset-0 z-0"
-        style={{ 
-          backgroundImage: `url(${heroImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
-      
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-background/95 via-background/90 to-background" />
-      
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-primary/10 px-6 py-2.5 rounded-full mb-8 backdrop-blur-sm border border-primary/20 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <span className="text-sm font-semibold text-primary">Transforme sua carreira com IA</span>
-          </div>
-          
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-100">
-            Domine a <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">Inteligência Artificial</span> do Zero
-          </h1>
-          
-          <p className="text-lg sm:text-xl lg:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
-            Aprenda IA do básico ao avançado com um curso completo, prático e certificado. 
-            Seja um profissional requisitado no mercado mais promissor da tecnologia.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
-            <Button 
-              size="lg" 
-              className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 shadow-lg hover:shadow-xl transition-all w-full sm:w-auto"
-              onClick={handleCTA}
-            >
-              Começar Agora
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-            
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 backdrop-blur-sm w-full sm:w-auto"
-              onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              Ver Planos
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
-            <div className="bg-card/80 backdrop-blur-md p-6 sm:p-8 rounded-2xl border border-border/50 shadow-lg hover:shadow-xl transition-all">
-              <Users className="w-10 h-10 sm:w-12 sm:h-12 text-primary mb-4 mx-auto" />
-              <div className="text-3xl sm:text-4xl font-bold text-foreground mb-2">500+</div>
-              <div className="text-sm sm:text-base text-muted-foreground font-medium">Alunos Certificados</div>
+    <section className="relative overflow-hidden" aria-labelledby="hero-heading">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.35),_transparent_55%)]" />
+      <div className="absolute -top-40 -right-20 h-96 w-96 -translate-y-10 rounded-full bg-primary/30 blur-3xl" />
+      <div className="absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-28 sm:py-32">
+        <div className="grid items-center gap-16 lg:grid-cols-[1.05fr,0.95fr]">
+          <div className="space-y-8">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-background/60 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-primary">
+              <Sparkles className="h-4 w-4" />
+              Nova turma aberta
+            </span>
+
+            <div className="space-y-6">
+              <h1
+                id="hero-heading"
+                className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.05] text-foreground"
+              >
+                Domine Inteligência Artificial do zero ao deployment com mentoria ao vivo
+              </h1>
+              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+                A jornada mais completa para quem deseja implementar IA no trabalho ou empreender em tecnologia. Aprenda com especialistas que já entregaram soluções reais em grandes empresas.
+              </p>
             </div>
-            
-            <div className="bg-card/80 backdrop-blur-md p-6 sm:p-8 rounded-2xl border border-border/50 shadow-lg hover:shadow-xl transition-all">
-              <BookOpen className="w-10 h-10 sm:w-12 sm:h-12 text-accent mb-4 mx-auto" />
-              <div className="text-3xl sm:text-4xl font-bold text-foreground mb-2">50+</div>
-              <div className="text-sm sm:text-base text-muted-foreground font-medium">Horas de Conteúdo</div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <Button
+                size="lg"
+                className="w-full sm:w-auto bg-primary text-primary-foreground px-8 py-6 text-base shadow-[0_15px_50px_rgba(37,99,235,0.45)] hover:bg-primary/90"
+                onClick={handleCTA}
+              >
+                Quero fazer parte
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto border-primary/30 bg-background/80 text-primary hover:bg-primary/10"
+                onClick={() => document.getElementById("program")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                Ver como funciona
+              </Button>
             </div>
-            
-            <div className="bg-card/80 backdrop-blur-md p-6 sm:p-8 rounded-2xl border border-border/50 shadow-lg hover:shadow-xl transition-all">
-              <Award className="w-10 h-10 sm:w-12 sm:h-12 text-primary mb-4 mx-auto" />
-              <div className="text-3xl sm:text-4xl font-bold text-foreground mb-2">4.9★</div>
-              <div className="text-sm sm:text-base text-muted-foreground font-medium">Avaliação Média</div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-2xl border border-primary/15 bg-background/60 px-4 py-5 text-center shadow-[0_1px_30px_rgba(37,99,235,0.15)]"
+                >
+                  <p className="text-2xl font-semibold text-primary">{stat.value}</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="absolute -top-10 -left-12 hidden sm:block rounded-3xl border border-primary/20 bg-background/90 px-5 py-4 text-sm shadow-[0_1px_30px_rgba(56,189,248,0.4)]">
+              <div className="flex items-center gap-3 text-primary">
+                <Shield className="h-5 w-5" />
+                Certificado reconhecido
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                Receba certificado com validação de 180h e compartilhável no LinkedIn.
+              </p>
+            </div>
+            <div className="overflow-hidden rounded-[3rem] border border-primary/20 bg-gradient-to-br from-primary/20 via-background/90 to-background/60 p-4 shadow-[0_1px_70px_rgba(37,99,235,0.4)]">
+              <div className="overflow-hidden rounded-[2.5rem]">
+                <img
+                  src={heroImage}
+                  alt="Profissionais aprendendo sobre Inteligência Artificial"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            </div>
+            <div className="absolute -bottom-10 right-6 flex max-w-xs items-center gap-3 rounded-3xl border border-primary/30 bg-background/90 px-6 py-4 text-sm shadow-[0_1px_30px_rgba(37,99,235,0.3)]">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <p className="text-muted-foreground leading-relaxed">
+                Trilhas atualizadas mensalmente com conteúdo hands-on.
+              </p>
+            </div>
+            <div className="absolute -bottom-16 left-1/2 hidden sm:flex h-32 w-32 -translate-x-1/2 items-center justify-center rounded-full border border-primary/40 bg-background/80 text-center text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+              Comunidade exclusiva
+              <Users className="mt-2 h-4 w-4" />
             </div>
           </div>
         </div>

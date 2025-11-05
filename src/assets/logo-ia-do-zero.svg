@@ -1,0 +1,37 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="faceGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <radialGradient id="coreGlow" cx="0.5" cy="0.5" r="0.6">
+      <stop offset="0%" stop-color="#60A5FA" />
+      <stop offset="100%" stop-color="#1E3A8A" stop-opacity="0.2" />
+    </radialGradient>
+    <linearGradient id="textGradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#60A5FA" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="#030712" />
+  <g transform="translate(96 90)">
+    <g transform="translate(0 0)">
+      <path d="M118 24C72 24 34 62 34 108V148C34 171 21 190 0 200V264H110C123 264 134 253 134 240V204C134 191 145 180 158 180H188C230 180 264 146 264 104V96C264 59 234 24 196 24H118Z" fill="url(#faceGradient)" opacity="0.9" />
+      <circle cx="142" cy="112" r="56" fill="#020817" stroke="#60A5FA" stroke-width="10" />
+      <circle cx="142" cy="112" r="22" fill="url(#coreGlow)" />
+      <path d="M118 24C72 24 34 62 34 108V148C34 171 21 190 0 200" stroke="#93C5FD" stroke-width="10" stroke-linecap="round" />
+      <path d="M116 56H190" stroke="#1E3A8A" stroke-width="8" stroke-linecap="round" />
+      <path d="M196 92L232 72" stroke="#38BDF8" stroke-width="8" stroke-linecap="round" />
+    </g>
+    <g transform="scale(-1,1) translate(-320 0)">
+      <path d="M118 24C72 24 34 62 34 108V148C34 171 21 190 0 200V264H110C123 264 134 253 134 240V204C134 191 145 180 158 180H188C230 180 264 146 264 104V96C264 59 234 24 196 24H118Z" fill="url(#faceGradient)" opacity="0.9" />
+      <circle cx="142" cy="112" r="56" fill="#020817" stroke="#60A5FA" stroke-width="10" />
+      <circle cx="142" cy="112" r="22" fill="url(#coreGlow)" />
+      <path d="M118 24C72 24 34 62 34 108V148C34 171 21 190 0 200" stroke="#93C5FD" stroke-width="10" stroke-linecap="round" />
+      <path d="M116 56H190" stroke="#1E3A8A" stroke-width="8" stroke-linecap="round" />
+      <path d="M196 92L232 72" stroke="#38BDF8" stroke-width="8" stroke-linecap="round" />
+    </g>
+  </g>
+  <text x="256" y="412" text-anchor="middle" font-family="'Poppins', 'Inter', sans-serif" font-size="64" font-weight="600" fill="url(#textGradient)">IA</text>
+  <text x="256" y="460" text-anchor="middle" font-family="'Inter', sans-serif" font-size="32" font-weight="500" fill="#93C5FD">do zero</text>
+</svg>

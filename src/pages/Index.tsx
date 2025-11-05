@@ -4,39 +4,85 @@ import PricingPlans from "@/components/PricingPlans";
 import FAQ from "@/components/FAQ";
 import Testimonials from "@/components/Testimonials";
 import Footer from "@/components/Footer";
+import BrandShowcase from "@/components/sections/BrandShowcase";
+import ProgramHighlights from "@/components/sections/ProgramHighlights";
+import ModuleTimeline from "@/components/sections/ModuleTimeline";
+import InstructorSpotlight from "@/components/sections/InstructorSpotlight";
+import CtaBanner from "@/components/sections/CtaBanner";
 import { useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
+import logo from "@/assets/logo-ia-do-zero.svg";
+
+const navLinks = [
+  { label: "Programa", href: "#program" },
+  { label: "Cronograma", href: "#timeline" },
+  { label: "Mentoria", href: "#mentoria" },
+  { label: "Depoimentos", href: "#testimonials" },
+  { label: "Planos", href: "#plans" },
+];
 
 const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen">
-      <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-            IA do Zero
-          </h1>
-          <Button 
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => navigate("/auth")}
-          >
-            <User className="w-4 h-4" />
-            <span className="hidden sm:inline">Área do Aluno</span>
-            <span className="sm:hidden">Entrar</span>
-          </Button>
+    <div className="min-h-screen bg-background">
+      <nav className="fixed top-0 w-full z-50 border-b border-border/40 bg-background/70 backdrop-blur-xl">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="IA do Zero" className="h-10 w-10 rounded-xl shadow-lg shadow-primary/40" />
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-primary/70">Academia</p>
+              <p className="text-lg font-semibold text-foreground">IA do Zero</p>
+            </div>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-8 text-sm font-medium">
+            {navLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:flex gap-2 text-muted-foreground hover:text-primary"
+              onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              Ver Planos
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary"
+              onClick={() => navigate("/auth")}
+            >
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Área do Aluno</span>
+              <span className="sm:hidden">Entrar</span>
+            </Button>
+          </div>
         </div>
       </nav>
-      
-      <div className="pt-16">
+
+      <main className="pt-24 sm:pt-28">
         <Hero />
+        <BrandShowcase />
+        <ProgramHighlights />
+        <ModuleTimeline />
+        <InstructorSpotlight />
         <PricingPlans />
         <Testimonials />
         <FAQ />
+        <CtaBanner />
         <Footer />
-      </div>
+      </main>
     </div>
   );
 };
