@@ -1,52 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Zap, ArrowRight } from "lucide-react";
+import { plans } from "@/lib/plans";
+import { useOnboarding } from "@/components/onboarding/OnboardingProvider";
 
 const PricingPlans = () => {
-  const handlePurchase = (plan: string) => {
-    const alertMessage =
-      "Você será direcionado para uma conversa com nosso especialista no WhatsApp (35) 99215-8486. Deseja continuar?";
-    if (!window.confirm(alertMessage)) {
-      return;
-    }
+  const { startOnboarding } = useOnboarding();
 
-    const message = encodeURIComponent(`Olá! Gostaria de adquirir o ${plan}.`);
-    window.open(`https://wa.me/5535992158486?text=${message}`, "_blank");
+  const handlePlanSelection = (planId: string) => {
+    startOnboarding({ planId, initialStep: 1 });
   };
-
-  const plans = [
-    {
-      name: "Ebook IA do Zero",
-      price: "19,99",
-      description: "Para quem quer iniciar agora com base sólida",
-      features: [
-        "Ebook completo em PDF",
-        "Acesso vitalício",
-        "Atualizações gratuitas",
-        "Checklist de ferramentas",
-      ],
-      highlight: false,
-    },
-    {
-      name: "Jornada Completa",
-      price: "149,90",
-      originalPrice: "300,00",
-      paymentNote: "no PIX",
-      installmentInfo: "Ou em até 12x no cartão de crédito",
-      description: "Programa completo com mentoria e projetos reais",
-      features: [
-        "Todos os recursos do Ebook",
-        "Acesso à plataforma completa",
-        "50+ horas de videoaulas",
-        "Certificado de conclusão",
-        "Projetos práticos reais",
-        "Comunidade exclusiva",
-        "Suporte prioritário",
-        "Atualizações vitalícias",
-      ],
-      highlight: true,
-    },
-  ];
 
   return (
     <section id="plans" className="py-20 sm:py-24 px-4">
@@ -63,9 +26,9 @@ const PricingPlans = () => {
         </div>
 
         <div className="mt-12 grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {plans.map((plan, index) => (
+          {plans.map((plan) => (
             <Card
-              key={index}
+              key={plan.id}
               className={`relative overflow-hidden rounded-[2.5rem] border ${
                 plan.highlight
                   ? "border-primary/50 bg-gradient-to-br from-primary/20 via-background/80 to-background/90 shadow-[0_1px_70px_rgba(37,99,235,0.35)]"
@@ -83,9 +46,10 @@ const PricingPlans = () => {
                 <CardDescription className="text-base text-muted-foreground">
                   {plan.description}
                 </CardDescription>
+                {plan.bestFor && <p className="mt-3 text-sm font-semibold text-primary/80">{plan.bestFor}</p>}
                 <div className="mt-6">
                   <div className="flex flex-col items-center justify-center gap-2 text-primary">
-                    {"originalPrice" in plan && plan.originalPrice && (
+                    {plan.originalPrice && (
                       <div className="flex items-baseline justify-center gap-1 text-muted-foreground/70 line-through">
                         <span className="text-sm font-medium">R$</span>
                         <span className="text-2xl font-semibold">{plan.originalPrice}</span>
@@ -97,9 +61,9 @@ const PricingPlans = () => {
                     </div>
                   </div>
                   <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mt-2">
-                    {"paymentNote" in plan && plan.paymentNote ? plan.paymentNote : "Pagamento único"}
+                    {plan.paymentNote ? plan.paymentNote : "Pagamento único"}
                   </p>
-                  {"installmentInfo" in plan && plan.installmentInfo && (
+                  {plan.installmentInfo && (
                     <p className="text-xs text-primary font-semibold mt-2">{plan.installmentInfo}</p>
                   )}
                 </div>
@@ -126,9 +90,9 @@ const PricingPlans = () => {
                       : "border-primary/30 bg-background/80 text-primary hover:bg-primary/10"
                   }`}
                   variant={plan.highlight ? "default" : "outline"}
-                  onClick={() => handlePurchase(plan.name)}
+                  onClick={() => handlePlanSelection(plan.id)}
                 >
-                  Quero este plano
+                  QUERO ESSE PLANO
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </CardFooter>

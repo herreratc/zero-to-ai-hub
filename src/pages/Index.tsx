@@ -13,6 +13,7 @@ import CtaBanner from "@/components/sections/CtaBanner";
 import { useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
 import logo from "@/assets/logo-ia-do-zero.svg";
+import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 
 const navLinks = [
   { label: "Programa", href: "#program" },
@@ -26,8 +27,9 @@ const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="fixed top-0 w-full z-50 border-b border-border/40 bg-background/70 backdrop-blur-xl">
+    <OnboardingProvider>
+      <div className="min-h-screen bg-background">
+        <nav className="fixed top-0 w-full z-50 border-b border-border/40 bg-background/70 backdrop-blur-xl">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <img src={logo} alt="IA do Zero" className="h-10 w-10 rounded-xl shadow-lg shadow-primary/40" />
@@ -72,20 +74,21 @@ const Index = () => {
         </div>
       </nav>
 
-      <main className="pt-24 sm:pt-28">
-        <Hero />
-        <BrandShowcase />
-        <ProgramHighlights />
-        <VisualShowcase />
-        <ModuleTimeline />
-        <InstructorSpotlight />
-        <PricingPlans />
-        <Testimonials />
-        <FAQ />
-        <CtaBanner />
-        <Footer />
-      </main>
-    </div>
+        <main className="pt-24 sm:pt-28">
+          <Hero />
+          <BrandShowcase />
+          <ProgramHighlights />
+          <VisualShowcase />
+          <ModuleTimeline />
+          <InstructorSpotlight />
+          <PricingPlans />
+          <Testimonials />
+          <FAQ />
+          <CtaBanner />
+          <Footer />
+        </main>
+      </div>
+    </OnboardingProvider>
   );
 };
 
