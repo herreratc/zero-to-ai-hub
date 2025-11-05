@@ -4,7 +4,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 const CtaBanner = () => {
   const handleCTA = () => {
     const message = encodeURIComponent("Quero garantir minha vaga na próxima turma da IA do Zero!");
-    window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
+    window.open(`https://wa.me/5535992158486?text=${message}`, "_blank");
   };
 
   return (

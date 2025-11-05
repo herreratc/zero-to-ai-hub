@@ -39,7 +39,7 @@ const InstructorSpotlight = () => {
                   className="bg-primary text-primary-foreground shadow-[0_10px_40px_rgba(37,99,235,0.35)] hover:bg-primary/90"
                   onClick={() => {
                     const message = encodeURIComponent("Quero conversar sobre a mentoria IA do Zero.");
-                    window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
+                    window.open(`https://wa.me/5535992158486?text=${message}`, "_blank");
                   }}
                 >
                   <MessageCircle className="mr-2 h-5 w-5" />

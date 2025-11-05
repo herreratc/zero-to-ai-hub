@@ -8,6 +8,7 @@ import BrandShowcase from "@/components/sections/BrandShowcase";
 import ProgramHighlights from "@/components/sections/ProgramHighlights";
 import ModuleTimeline from "@/components/sections/ModuleTimeline";
 import InstructorSpotlight from "@/components/sections/InstructorSpotlight";
+import VisualShowcase from "@/components/sections/VisualShowcase";
 import CtaBanner from "@/components/sections/CtaBanner";
 import { useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
@@ -75,6 +76,7 @@ const Index = () => {
         <Hero />
         <BrandShowcase />
         <ProgramHighlights />
+        <VisualShowcase />
         <ModuleTimeline />
         <InstructorSpotlight />
         <PricingPlans />

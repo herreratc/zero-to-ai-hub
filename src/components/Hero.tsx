@@ -11,7 +11,7 @@ const stats = [
 const Hero = () => {
   const handleCTA = () => {
     const message = encodeURIComponent("Olá! Gostaria de saber mais sobre o curso IA do Zero.");
-    window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
+    window.open(`https://wa.me/5535992158486?text=${message}`, "_blank");
   };
 
   return (

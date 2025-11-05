@@ -86,7 +86,7 @@ const FAQ = () => {
             className="px-8 py-6"
             onClick={() => {
               const message = encodeURIComponent("Olá! Tenho algumas dúvidas sobre o curso IA do Zero.");
-              window.open(`https://wa.me/5511999999999?text=${message}`, '_blank');
+              window.open(`https://wa.me/5535992158486?text=${message}`, '_blank');
             }}
           >
             Falar no WhatsApp
