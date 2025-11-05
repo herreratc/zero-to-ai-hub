@@ -24,7 +24,7 @@ const Footer = () => {
                 className="bg-primary text-primary-foreground shadow-[0_10px_30px_rgba(37,99,235,0.35)] hover:bg-primary/90"
                 onClick={() => {
                   const message = encodeURIComponent("Olá! Quero começar minha jornada em IA agora!");
-                  window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
+                  window.open(`https://wa.me/5535992158486?text=${message}`, "_blank");
                 }}
               >
                 <MessageCircle className="mr-2 w-5 h-5" />

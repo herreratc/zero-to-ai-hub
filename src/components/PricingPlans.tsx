@@ -4,8 +4,14 @@ import { Check, Zap, ArrowRight } from "lucide-react";
 
 const PricingPlans = () => {
   const handlePurchase = (plan: string) => {
+    const alertMessage =
+      "Você será direcionado para uma conversa com nosso especialista no WhatsApp (35) 99215-8486. Deseja continuar?";
+    if (!window.confirm(alertMessage)) {
+      return;
+    }
+
     const message = encodeURIComponent(`Olá! Gostaria de adquirir o ${plan}.`);
-    window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
+    window.open(`https://wa.me/5535992158486?text=${message}`, "_blank");
   };
 
   const plans = [
@@ -23,7 +29,10 @@ const PricingPlans = () => {
     },
     {
       name: "Jornada Completa",
-      price: "297,00",
+      price: "149,90",
+      originalPrice: "300,00",
+      paymentNote: "no PIX",
+      installmentInfo: "Ou em até 12x no cartão de crédito",
       description: "Programa completo com mentoria e projetos reais",
       features: [
         "Todos os recursos do Ebook",
@@ -75,11 +84,24 @@ const PricingPlans = () => {
                   {plan.description}
                 </CardDescription>
                 <div className="mt-6">
-                  <div className="flex items-baseline justify-center gap-1 text-primary">
-                    <span className="text-xl font-semibold">R$</span>
-                    <span className="text-5xl sm:text-6xl font-bold">{plan.price}</span>
+                  <div className="flex flex-col items-center justify-center gap-2 text-primary">
+                    {"originalPrice" in plan && plan.originalPrice && (
+                      <div className="flex items-baseline justify-center gap-1 text-muted-foreground/70 line-through">
+                        <span className="text-sm font-medium">R$</span>
+                        <span className="text-2xl font-semibold">{plan.originalPrice}</span>
+                      </div>
+                    )}
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-xl font-semibold">R$</span>
+                      <span className="text-5xl sm:text-6xl font-bold">{plan.price}</span>
+                    </div>
                   </div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mt-2">Pagamento único</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mt-2">
+                    {"paymentNote" in plan && plan.paymentNote ? plan.paymentNote : "Pagamento único"}
+                  </p>
+                  {"installmentInfo" in plan && plan.installmentInfo && (
+                    <p className="text-xs text-primary font-semibold mt-2">{plan.installmentInfo}</p>
+                  )}
                 </div>
               </CardHeader>
 
