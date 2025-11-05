@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Sparkles, Users, Shield } from "lucide-react";
 import heroImage from "@/assets/hero-ai.jpg";
+import { useOnboarding } from "@/components/onboarding/OnboardingProvider";
 
 const stats = [
   { value: "500+", label: "Carreiras aceleradas" },
@@ -9,10 +10,7 @@ const stats = [
 ];
 
 const Hero = () => {
-  const handleCTA = () => {
-    const message = encodeURIComponent("Olá! Gostaria de saber mais sobre o curso IA do Zero.");
-    window.open(`https://wa.me/5535992158486?text=${message}`, "_blank");
-  };
+  const { startOnboarding } = useOnboarding();
 
   return (
     <section className="relative overflow-hidden" aria-labelledby="hero-heading">
@@ -44,18 +42,18 @@ const Hero = () => {
               <Button
                 size="lg"
                 className="w-full sm:w-auto bg-primary text-primary-foreground px-8 py-6 text-base shadow-[0_15px_50px_rgba(37,99,235,0.45)] hover:bg-primary/90"
-                onClick={handleCTA}
+                onClick={() => startOnboarding()}
               >
-                Quero fazer parte
+                QUERO FAZER PARTE
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="w-full sm:w-auto border-primary/30 bg-background/80 text-primary hover:bg-primary/10"
-                onClick={() => document.getElementById("program")?.scrollIntoView({ behavior: "smooth" })}
+                onClick={() => startOnboarding({ initialStep: 0 })}
               >
-                Ver como funciona
+                VER COMO FUNCIONA
               </Button>
             </div>
 
