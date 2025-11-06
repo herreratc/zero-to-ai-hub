@@ -134,7 +134,11 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
           <div className="space-y-6">
             {step === 0 && <IntroStep />}
             {step === 1 && (
-              <PlansStep selectedPlanId={selectedPlanId} onSelectPlan={handlePlanSelection} />
+              <PlansStep
+                selectedPlanId={selectedPlanId}
+                onSelectPlan={handlePlanSelection}
+                selectedPlan={selectedPlan}
+              />
             )}
             {step === 2 && <FinalStep selectedPlanName={selectedPlan?.name ?? "IA do Zero"} />}
 
@@ -281,9 +285,11 @@ const IntroStep = () => {
 const PlansStep = ({
   selectedPlanId,
   onSelectPlan,
+  selectedPlan,
 }: {
   selectedPlanId: string;
   onSelectPlan: (planId: string) => void;
+  selectedPlan?: Plan;
 }) => (
   <div className="space-y-5">
     <div className="grid gap-4 md:grid-cols-2">
@@ -291,6 +297,8 @@ const PlansStep = ({
         <PlanCard key={plan.id} plan={plan} isActive={plan.id === selectedPlanId} onSelectPlan={onSelectPlan} />
       ))}
     </div>
+
+    {selectedPlan?.journey && <PlanJourney plan={selectedPlan} />}
 
     <div className="rounded-[2rem] border border-amber-500/40 bg-amber-500/10 p-5 text-sm text-amber-700">
       🎁 Inscreva-se durante a Black Friday e receba upgrades exclusivos: 2 mentorias coletivas extras, um workshop ao vivo de
@@ -399,6 +407,71 @@ const PlanCard = ({
           </CollapsibleContent>
         </Collapsible>
       )}
+    </div>
+  );
+};
+
+const PlanJourney = ({ plan }: { plan: Plan }) => {
+  if (!plan.journey?.length) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-6 rounded-[2rem] border border-primary/20 bg-background/90 p-6 sm:p-8">
+      <div className="space-y-3">
+        <Badge className="bg-primary/15 text-primary border border-primary/40 uppercase tracking-[0.3em]">
+          Plano {plan.name}
+        </Badge>
+        <h3 className="text-xl sm:text-2xl font-semibold text-foreground">
+          Veja como sua evolução acontece na prática
+        </h3>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          O {plan.name} foi desenhado para gerar resultados semana a semana, com entregáveis claros e suporte próximo da nossa
+          equipe.
+        </p>
+      </div>
+
+      <ol className="space-y-4">
+        {plan.journey.map((stage, index) => (
+          <li
+            key={stage.title}
+            className="rounded-3xl border border-primary/15 bg-background/80 p-5 sm:p-6 shadow-[0_1px_35px_rgba(37,99,235,0.15)]"
+          >
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-sm font-semibold text-primary">
+                    {index + 1}
+                  </span>
+                  <div>
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <h4 className="text-lg font-semibold text-foreground">{stage.title}</h4>
+                      <span className="text-xs uppercase tracking-[0.3em] text-primary/80">{stage.duration}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">{stage.focus}</p>
+                  </div>
+                </div>
+              </div>
+
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {stage.outcomes.map((outcome) => (
+                  <li key={outcome} className="flex gap-2">
+                    <Check className="mt-0.5 h-4 w-4 text-primary" />
+                    <span>{outcome}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {stage.deliverable && (
+                <div className="rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-xs uppercase tracking-[0.3em] text-primary">
+                  Entregável:
+                  <span className="ml-1 font-semibold tracking-normal text-foreground">{stage.deliverable}</span>
+                </div>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 };
