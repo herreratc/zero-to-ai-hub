@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +19,7 @@ import {
   CheckCircle2,
   Clock,
   Compass,
+  FileText,
   Flame,
   LogOut,
   MessageSquare,
@@ -29,10 +31,29 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
+import modulo0Pdf from "../../ebook/Modeulo-0-IA-do-Zero.pdf";
+import modulo1Pdf from "../../ebook/Modulo-1-Introducao-a-Inteligencia-Artificial.pdf";
+import modulo2Pdf from "../../ebook/Modulo-2-Tipos-de-Inteligencia-Artificial.pdf";
+import modulo3Pdf from "../../ebook/Modulo-3-Ferramentas-Essenciais-de-Inteligencia-Artificial.pdf";
+import modulo4Pdf from "../../ebook/Modulo-4-IA-Visual.pdf";
+import modulo5Pdf from "../../ebook/Modulo-5-Automacoes-com-Inteligencia-Artificial.pdf";
+import modulo6Pdf from "../../ebook/Modulo-6-Projetos-Avancados-com-Inteligencia-Artificial.pdf";
+import modulo7Pdf from "../../ebook/Modulo-7-Monetizacao-com-Inteligencia-Artificial.pdf";
+import modulo8Pdf from "../../ebook/Modulo-8-O-Futuro-da-Inteligencia-Artificial.pdf";
+
 type ProductivityRange = "week" | "month";
 type ProductivityPoint = { name: string; lessons: number; practice: number };
 
 type LearningStepStatus = "completed" | "in-progress" | "upcoming";
+
+type EbookModule = {
+  id: string;
+  title: string;
+  description: string;
+  pdfUrl: string;
+};
+
+const EBOOK_PROGRESS_STORAGE_KEY = "ebook-reading-progress";
 
 const chartConfig = {
   lessons: {
@@ -62,6 +83,70 @@ const productivityData: Record<ProductivityRange, ProductivityPoint[]> = {
     { name: "Sem 4", lessons: 15, practice: 11 },
   ],
 };
+
+const ebookModules: EbookModule[] = [
+  {
+    id: "module-0",
+    title: "Módulo 0 · Boas-vindas e mentalidade",
+    description: "Entenda como tirar máximo proveito do ebook e organize sua rotina de estudos.",
+    pdfUrl: modulo0Pdf,
+  },
+  {
+    id: "module-1",
+    title: "Módulo 1 · Introdução à Inteligência Artificial",
+    description: "Domine os conceitos fundamentais, a evolução histórica e os casos de uso essenciais.",
+    pdfUrl: modulo1Pdf,
+  },
+  {
+    id: "module-2",
+    title: "Módulo 2 · Tipos de Inteligência Artificial",
+    description: "Explore as principais categorias de IA e identifique qual aplicar em cada cenário.",
+    pdfUrl: modulo2Pdf,
+  },
+  {
+    id: "module-3",
+    title: "Módulo 3 · Ferramentas essenciais",
+    description: "Monte seu kit de ferramentas e aprenda a configurá-las para o dia a dia profissional.",
+    pdfUrl: modulo3Pdf,
+  },
+  {
+    id: "module-4",
+    title: "Módulo 4 · IA Visual",
+    description: "Descubra fluxos para criação de imagens, vídeos e assets com qualidade profissional.",
+    pdfUrl: modulo4Pdf,
+  },
+  {
+    id: "module-5",
+    title: "Módulo 5 · Automações inteligentes",
+    description: "Implemente rotinas automatizadas que conectam IA a processos e ferramentas populares.",
+    pdfUrl: modulo5Pdf,
+  },
+  {
+    id: "module-6",
+    title: "Módulo 6 · Projetos avançados",
+    description: "Construa soluções completas com integrações, APIs e monitoramento de resultados.",
+    pdfUrl: modulo6Pdf,
+  },
+  {
+    id: "module-7",
+    title: "Módulo 7 · Monetização com IA",
+    description: "Crie ofertas, valide produtos e monte estratégias de vendas apoiadas por IA.",
+    pdfUrl: modulo7Pdf,
+  },
+  {
+    id: "module-8",
+    title: "Módulo 8 · Futuro da Inteligência Artificial",
+    description: "Mapeie tendências e defina seus próximos passos para continuar evoluindo na área.",
+    pdfUrl: modulo8Pdf,
+  },
+];
+
+const defaultEbookProgress = ebookModules.reduce<Record<string, boolean>>((acc, module) => {
+  acc[module.id] = false;
+  return acc;
+}, {});
+
+const totalEbookModules = ebookModules.length;
 
 const learningPath: { title: string; description: string; status: LearningStepStatus; highlight?: string }[] = [
   {
@@ -113,8 +198,8 @@ const resourceTabs = [
     label: "Ebook",
     icon: BookOpen,
     title: "Guia completo e atualizado",
-    description: "Baixe o manual com frameworks, prompts e checklists para acelerar seus resultados.",
-    cta: "Acessar material",
+    description: "Baixe os capítulos, marque sua leitura e acompanhe o avanço do plano Ebook IA do Zero.",
+    cta: "Ver capítulos",
   },
   {
     value: "video",
@@ -168,6 +253,9 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<ProductivityRange>("week");
+  const [ebookProgress, setEbookProgress] = useState<Record<string, boolean>>(() => ({
+    ...defaultEbookProgress,
+  }));
 
   useEffect(() => {
     const {
@@ -191,6 +279,48 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(EBOOK_PROGRESS_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Record<string, boolean>;
+        setEbookProgress((prev) => ({ ...prev, ...parsed }));
+      }
+    } catch (error) {
+      console.error("Falha ao carregar o progresso do ebook", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(EBOOK_PROGRESS_STORAGE_KEY, JSON.stringify(ebookProgress));
+    } catch (error) {
+      console.error("Falha ao salvar o progresso do ebook", error);
+    }
+  }, [ebookProgress]);
+
+  const completedModules = useMemo(
+    () =>
+      ebookModules.reduce((count, module) => {
+        return ebookProgress[module.id] ? count + 1 : count;
+      }, 0),
+    [ebookProgress],
+  );
+
+  const progressValue = totalEbookModules === 0 ? 0 : Math.round((completedModules / totalEbookModules) * 100);
+  const progressBadgeLabel = `${completedModules}/${totalEbookModules} capítulos`;
+  const progressDescription =
+    completedModules === totalEbookModules
+      ? "Você concluiu todos os capítulos do ebook. Continue revisando sempre que precisar!"
+      : `Você leu ${completedModules} de ${totalEbookModules} capítulos. Marque cada capítulo após finalizar a leitura.`;
+
+  const handleModuleToggle = (moduleId: string, checked: boolean) => {
+    setEbookProgress((prev) => ({
+      ...prev,
+      [moduleId]: checked,
+    }));
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast.success("Logout realizado com sucesso!");
@@ -212,7 +342,6 @@ const Dashboard = () => {
   }
 
   const activeProductivity = productivityData[range];
-  const progressValue = 42;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-[rgba(16,24,40,0.7)] to-background">
@@ -259,19 +388,17 @@ const Dashboard = () => {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Card className="bg-card/80 backdrop-blur">
               <CardHeader className="pb-3">
-                <CardDescription>Progresso do curso</CardDescription>
+                <CardDescription>Progresso do ebook</CardDescription>
                 <div className="flex items-end justify-between">
                   <CardTitle className="text-3xl font-semibold">{progressValue}%</CardTitle>
                   <Badge variant="outline" className="border-primary/50 text-primary">
-                    Meta: 60% neste mês
+                    {progressBadgeLabel}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <Progress value={progressValue} className="h-2 bg-muted" />
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Você completou 5 de 12 módulos. Uma nova badge será liberada ao atingir 50%.
-                </p>
+                <p className="mt-3 text-xs text-muted-foreground">{progressDescription}</p>
               </CardContent>
             </Card>
 
@@ -438,21 +565,108 @@ const Dashboard = () => {
                 </TabsList>
                 {resourceTabs.map((tab) => (
                   <TabsContent key={tab.value} value={tab.value}>
-                    <div className="rounded-xl border border-border/60 bg-background/70 p-6 shadow-[var(--shadow-elegant)]">
-                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div className="space-y-2">
-                          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                            <tab.icon className="h-3.5 w-3.5" />
-                            {tab.label}
+                    {tab.value === "ebook" ? (
+                      <div className="space-y-5">
+                        <div className="rounded-xl border border-border/60 bg-background/70 p-6 shadow-[var(--shadow-elegant)]">
+                          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div className="space-y-2">
+                              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                                <tab.icon className="h-3.5 w-3.5" />
+                                Ebook IA do Zero
+                              </div>
+                              <h3 className="text-xl font-semibold">{tab.title}</h3>
+                              <p className="text-sm text-muted-foreground">{tab.description}</p>
+                            </div>
+                            <div className="w-full space-y-3 rounded-lg border border-border/60 bg-background/60 p-4 md:w-72">
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>Progresso total</span>
+                                <span className="font-semibold text-foreground">{progressValue}%</span>
+                              </div>
+                              <Progress value={progressValue} className="h-2" />
+                              <p className="text-[11px] text-muted-foreground">
+                                {completedModules} de {totalEbookModules} capítulos concluídos
+                              </p>
+                            </div>
                           </div>
-                          <h3 className="text-xl font-semibold">{tab.title}</h3>
-                          <p className="text-sm text-muted-foreground">{tab.description}</p>
                         </div>
-                        <Button size="sm" className="w-full md:w-auto">
-                          {tab.cta}
-                        </Button>
+                        <div className="space-y-4">
+                          {ebookModules.map((module) => {
+                            const checkboxId = `${module.id}-checkbox`;
+                            const isCompleted = ebookProgress[module.id];
+
+                            return (
+                              <div
+                                key={module.id}
+                                className={cn(
+                                  "flex flex-col gap-4 rounded-lg border border-border/60 bg-background/60 p-4 transition-colors md:flex-row md:items-center md:justify-between",
+                                  isCompleted && "border-primary/40 bg-primary/10",
+                                )}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <Checkbox
+                                    id={checkboxId}
+                                    checked={isCompleted}
+                                    onCheckedChange={(checked) => handleModuleToggle(module.id, checked === true)}
+                                  />
+                                  <div className="space-y-2">
+                                    <label htmlFor={checkboxId} className="block text-sm font-semibold leading-snug text-foreground">
+                                      {module.title}
+                                    </label>
+                                    <p className="text-xs text-muted-foreground">{module.description}</p>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <Button variant="outline" size="sm" asChild>
+                                        <a href={module.pdfUrl} target="_blank" rel="noopener noreferrer">
+                                          <FileText className="h-4 w-4" />
+                                          Abrir PDF
+                                        </a>
+                                      </Button>
+                                      <Badge
+                                        variant="outline"
+                                        className={cn(
+                                          "border-border/60 text-[10px] font-semibold uppercase tracking-wide",
+                                          isCompleted ? "border-primary/40 text-primary" : "text-muted-foreground",
+                                        )}
+                                      >
+                                        {isCompleted ? "Leitura concluída" : "Marque após ler"}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 self-end text-xs text-muted-foreground md:self-center">
+                                  {isCompleted ? (
+                                    <>
+                                      <CheckCircle2 className="h-4 w-4 text-primary" />
+                                      <span>Capítulo concluído</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Clock className="h-4 w-4" />
+                                      <span>Em leitura</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="rounded-xl border border-border/60 bg-background/70 p-6 shadow-[var(--shadow-elegant)]">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                          <div className="space-y-2">
+                            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                              <tab.icon className="h-3.5 w-3.5" />
+                              {tab.label}
+                            </div>
+                            <h3 className="text-xl font-semibold">{tab.title}</h3>
+                            <p className="text-sm text-muted-foreground">{tab.description}</p>
+                          </div>
+                          <Button size="sm" className="w-full md:w-auto">
+                            {tab.cta}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </TabsContent>
                 ))}
               </Tabs>
