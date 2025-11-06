@@ -8,6 +8,7 @@ import BrandShowcase from "@/components/sections/BrandShowcase";
 import CtaBanner from "@/components/sections/CtaBanner";
 import EssentialHighlights from "@/components/sections/EssentialHighlights";
 import CurriculumOverview from "@/components/sections/CurriculumOverview";
+import TrustSignals from "@/components/sections/TrustSignals";
 import { useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
 import logo from "@/assets/logo-ia-do-zero.svg";
@@ -75,6 +76,7 @@ const Index = () => {
           <Hero />
           <EssentialHighlights />
           <BrandShowcase />
+          <TrustSignals />
           <CurriculumOverview />
           <PricingPlans />
           <Testimonials />
