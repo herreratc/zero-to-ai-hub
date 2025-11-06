@@ -1,19 +1,178 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { BookOpen, Video, Award, LogOut } from "lucide-react";
+import {
+  Award,
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Compass,
+  Flame,
+  LogOut,
+  MessageSquare,
+  PlayCircle,
+  Sparkles,
+  TrendingUp,
+  Video,
+} from "lucide-react";
 import type { User } from "@supabase/supabase-js";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+
+type ProductivityRange = "week" | "month";
+type ProductivityPoint = { name: string; lessons: number; practice: number };
+
+type LearningStepStatus = "completed" | "in-progress" | "upcoming";
+
+const chartConfig = {
+  lessons: {
+    label: "Aulas assistidas",
+    color: "hsl(var(--primary))",
+  },
+  practice: {
+    label: "Práticas concluídas",
+    color: "hsl(var(--accent))",
+  },
+};
+
+const productivityData: Record<ProductivityRange, ProductivityPoint[]> = {
+  week: [
+    { name: "Seg", lessons: 2, practice: 1 },
+    { name: "Ter", lessons: 3, practice: 2 },
+    { name: "Qua", lessons: 2, practice: 2 },
+    { name: "Qui", lessons: 4, practice: 3 },
+    { name: "Sex", lessons: 3, practice: 2 },
+    { name: "Sáb", lessons: 1, practice: 1 },
+    { name: "Dom", lessons: 1, practice: 1 },
+  ],
+  month: [
+    { name: "Sem 1", lessons: 9, practice: 5 },
+    { name: "Sem 2", lessons: 11, practice: 7 },
+    { name: "Sem 3", lessons: 13, practice: 9 },
+    { name: "Sem 4", lessons: 15, practice: 11 },
+  ],
+};
+
+const learningPath: { title: string; description: string; status: LearningStepStatus; highlight?: string }[] = [
+  {
+    title: "Fundamentos de IA",
+    description: "Conceitos básicos, tipos de modelos e mindset do especialista",
+    status: "completed",
+    highlight: "Concluído em 12 Jan",
+  },
+  {
+    title: "Domine o Prompt Engineering",
+    description: "Estruturas avançadas, frameworks e automatizações com GPTs",
+    status: "in-progress",
+    highlight: "Faltam 2 aulas",
+  },
+  {
+    title: "Deploy de soluções reais",
+    description: "Construindo aplicações com IA e integrando APIs",
+    status: "upcoming",
+    highlight: "Desbloqueia ao concluir o módulo atual",
+  },
+  {
+    title: "Portfólio e certificação",
+    description: "Entrega do projeto final e acesso à certificação",
+    status: "upcoming",
+    highlight: "Mentoria coletiva agendada",
+  },
+];
+
+const upcomingSessions = [
+  {
+    title: "Mentoria ao vivo com especialistas",
+    date: "Terça, 21 Jan",
+    time: "19:00",
+    type: "Mentoria",
+    cta: "Entrar na sala",
+  },
+  {
+    title: "Desafio prático guiado",
+    date: "Quinta, 23 Jan",
+    time: "20:30",
+    type: "Workshop",
+    cta: "Salvar na agenda",
+  },
+];
+
+const resourceTabs = [
+  {
+    value: "ebook",
+    label: "Ebook",
+    icon: BookOpen,
+    title: "Guia completo e atualizado",
+    description: "Baixe o manual com frameworks, prompts e checklists para acelerar seus resultados.",
+    cta: "Acessar material",
+  },
+  {
+    value: "video",
+    label: "Videoaulas",
+    icon: Video,
+    title: "Trilhas guiadas e curadoria inteligente",
+    description: "Aulas curtas com roteiros acionáveis e anotações inteligentes para revisar quando quiser.",
+    cta: "Ver aulas",
+  },
+  {
+    value: "community",
+    label: "Comunidade",
+    icon: MessageSquare,
+    title: "Networking com especialistas",
+    description: "Participe do fórum exclusivo, desafios semanais e feedback dos mentores.",
+    cta: "Abrir comunidade",
+  },
+  {
+    value: "mentorship",
+    label: "Mentorias",
+    icon: Compass,
+    title: "Agenda personalizada",
+    description: "Agende sessões individuais com mentores para acelerar seu plano de estudos.",
+    cta: "Reservar horário",
+  },
+];
+
+const achievements = [
+  {
+    title: "Sequência de estudos",
+    value: "7 dias",
+    description: "Mantenha a constância para ganhar acesso antecipado às masterclasses.",
+    icon: Flame,
+  },
+  {
+    title: "Média de evolução",
+    value: "+18%",
+    description: "Seu ritmo está acima da média da turma nesta semana.",
+    icon: TrendingUp,
+  },
+  {
+    title: "Certificação",
+    value: "Disponível em 62%",
+    description: "Complete os projetos práticos para liberar o certificado oficial.",
+    icon: Award,
+  },
+];
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState<ProductivityRange>("week");
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       if (!session?.user) {
         navigate("/auth");
@@ -38,6 +197,12 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const displayName = useMemo(() => {
+    if (!user?.email) return "Aluno";
+    const name = user.user_metadata?.full_name || user.email.split("@")[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  }, [user]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -46,94 +211,356 @@ const Dashboard = () => {
     );
   }
 
+  const activeProductivity = productivityData[range];
+  const progressValue = 42;
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            IA do Zero
-          </h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">{user?.email}</span>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
+    <div className="min-h-screen bg-gradient-to-b from-background via-[rgba(16,24,40,0.7)] to-background">
+      <header className="relative border-b border-border/40 bg-gradient-to-br from-primary/15 via-background to-background">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(56,97,251,0.2),_transparent_55%)]" />
+        <div className="relative container mx-auto px-4 py-10 space-y-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-primary">
+                <Sparkles className="h-3 w-3" />
+                Dashboard do aluno
+              </div>
+              <div className="flex items-center gap-4">
+                <Avatar className="h-14 w-14 border border-primary/40">
+                  <AvatarFallback className="text-lg font-semibold text-primary">
+                    {displayName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
+                    Olá, {displayName} 👋
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Seu plano personalizado está pronto. Continue evoluindo na jornada para dominar IA aplicada.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button variant="outline" size="sm" className="border-primary/40" onClick={() => navigate("/")}>
+                Central de suporte
+              </Button>
+              <Button size="sm" className="shadow-[var(--shadow-elegant)]">
+                <PlayCircle className="mr-2 h-4 w-4" />
+                Continuar última aula
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Card className="bg-card/80 backdrop-blur">
+              <CardHeader className="pb-3">
+                <CardDescription>Progresso do curso</CardDescription>
+                <div className="flex items-end justify-between">
+                  <CardTitle className="text-3xl font-semibold">{progressValue}%</CardTitle>
+                  <Badge variant="outline" className="border-primary/50 text-primary">
+                    Meta: 60% neste mês
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Progress value={progressValue} className="h-2 bg-muted" />
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Você completou 5 de 12 módulos. Uma nova badge será liberada ao atingir 50%.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/80 backdrop-blur">
+              <CardHeader className="pb-2">
+                <CardDescription>Horas dedicadas</CardDescription>
+                <CardTitle className="text-2xl font-semibold">18h 40m</CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground">
+                +4h em relação à semana anterior. Continue com sessões de foco de 45 minutos.
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/80 backdrop-blur">
+              <CardHeader className="pb-2">
+                <CardDescription>Sequência ativa</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-2xl font-semibold">
+                  <Flame className="h-5 w-5 text-orange-400" /> 7 dias
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground">
+                Complete uma atividade por dia para desbloquear a mentoria exclusiva da semana.
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/80 backdrop-blur">
+              <CardHeader className="pb-2">
+                <CardDescription>Próxima entrega</CardDescription>
+                <CardTitle className="text-2xl font-semibold">Projeto 02</CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground">
+                Entrega do MVP com automações. Feedback dos mentores em 26 Jan.
+              </CardContent>
+            </Card>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">Bem-vindo à sua área de aluno!</h2>
-          <p className="text-muted-foreground">
-            Explore o conteúdo do seu curso e continue sua jornada de aprendizado.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          <Card className="hover:shadow-[var(--shadow-elegant)] transition-all cursor-pointer">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <BookOpen className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle>Ebook</CardTitle>
-              <CardDescription>Material completo em PDF</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full">Acessar Material</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-[var(--shadow-elegant)] transition-all cursor-pointer">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center mb-4">
-                <Video className="w-6 h-6 text-accent" />
-              </div>
-              <CardTitle>Videoaulas</CardTitle>
-              <CardDescription>50+ horas de conteúdo prático</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full">Ver Aulas</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-[var(--shadow-elegant)] transition-all cursor-pointer">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Award className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle>Certificado</CardTitle>
-              <CardDescription>Complete para obter seu certificado</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full">Em Breve</Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="bg-primary/5 border-primary/20">
-          <CardHeader>
-            <CardTitle>Seu Progresso</CardTitle>
-            <CardDescription>Continue de onde parou</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+      <main className="container mx-auto px-4 py-12 space-y-10">
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card className="lg:col-span-2 border border-border/60 bg-card/90 shadow-[var(--shadow-elegant)]">
+            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="flex justify-between mb-2 text-sm">
-                  <span>Progresso Geral</span>
-                  <span className="font-semibold">0%</span>
+                <CardTitle>Seu ritmo de aprendizado</CardTitle>
+                <CardDescription>
+                  Compare o volume de aulas assistidas e práticas concluídas no período selecionado.
+                </CardDescription>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/60 p-1 text-xs">
+                <Button
+                  size="sm"
+                  variant={range === "week" ? "default" : "ghost"}
+                  className={cn("rounded-full px-4", range === "week" ? "shadow-[var(--shadow-elegant)]" : "text-muted-foreground")}
+                  onClick={() => setRange("week")}
+                >
+                  Últimos 7 dias
+                </Button>
+                <Button
+                  size="sm"
+                  variant={range === "month" ? "default" : "ghost"}
+                  className={cn("rounded-full px-4", range === "month" ? "shadow-[var(--shadow-elegant)]" : "text-muted-foreground")}
+                  onClick={() => setRange("month")}
+                >
+                  Últimos 30 dias
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <ChartContainer config={chartConfig} className="h-[300px]">
+                <LineChart data={activeProductivity} margin={{ left: 12, right: 12 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.4)" />
+                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} fontSize={12} width={40} />
+                  <ChartTooltip cursor={{ strokeDasharray: "4 4" }} content={<ChartTooltipContent indicator="line" />} />
+                  <Line type="monotone" dataKey="lessons" stroke="var(--color-lessons)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="practice" stroke="var(--color-practice)" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ChartContainer>
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="rounded-xl border border-border/60 bg-background/60 p-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Tempo médio por sessão</span>
+                    <Badge variant="outline" className="border-primary/40 text-primary">
+                      +12%
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-lg font-semibold">47 minutos</p>
+                  <p className="text-xs text-muted-foreground">
+                    Ajuste os blocos de estudo para manter o foco sem interrupções.
+                  </p>
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary w-0 transition-all"></div>
+                <div className="rounded-xl border border-border/60 bg-background/60 p-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Taxa de conclusão</span>
+                    <Badge variant="outline" className="border-accent/40 text-accent">
+                      +3 aulas
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-lg font-semibold">82%</p>
+                  <p className="text-xs text-muted-foreground">
+                    Excelente! Aproveite para documentar os principais aprendizados da semana.
+                  </p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Comece sua jornada acessando o material disponível acima.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/60 bg-card/90">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Próximas sessões</CardTitle>
+                  <CardDescription>Prepare-se para os encontros ao vivo.</CardDescription>
+                </div>
+                <Badge variant="outline" className="border-primary/40 text-primary">
+                  2 eventos
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {upcomingSessions.map((session) => (
+                <div key={session.title} className="rounded-xl border border-border/50 bg-background/60 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-2">
+                      <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>
+                          {session.date} • {session.time}
+                        </span>
+                      </div>
+                      <h3 className="text-base font-semibold leading-tight">{session.title}</h3>
+                      <p className="text-xs text-muted-foreground">{session.type}</p>
+                    </div>
+                    <Button size="sm" variant="outline" className="border-primary/40 text-primary">
+                      {session.cta}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card className="border border-border/60 bg-card/90 lg:col-span-2">
+            <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <CardTitle>Trilhas e recursos premium</CardTitle>
+                <CardDescription>Escolha o próximo passo conforme sua prioridade.</CardDescription>
+              </div>
+              <Badge variant="outline" className="border-border/60 bg-background/60 text-xs">
+                Atualizado diariamente
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="ebook" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-2 gap-2 bg-background/60 p-1 md:grid-cols-4">
+                  {resourceTabs.map((tab) => (
+                    <TabsTrigger key={tab.value} value={tab.value} className="rounded-lg text-xs md:text-sm">
+                      <tab.icon className="mr-2 h-4 w-4" />
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                {resourceTabs.map((tab) => (
+                  <TabsContent key={tab.value} value={tab.value}>
+                    <div className="rounded-xl border border-border/60 bg-background/70 p-6 shadow-[var(--shadow-elegant)]">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="space-y-2">
+                          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                            <tab.icon className="h-3.5 w-3.5" />
+                            {tab.label}
+                          </div>
+                          <h3 className="text-xl font-semibold">{tab.title}</h3>
+                          <p className="text-sm text-muted-foreground">{tab.description}</p>
+                        </div>
+                        <Button size="sm" className="w-full md:w-auto">
+                          {tab.cta}
+                        </Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/60 bg-card/90">
+            <CardHeader>
+              <CardTitle>Reconhecimentos</CardTitle>
+              <CardDescription>Celebrando sua evolução semanal.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {achievements.map((item) => (
+                <div key={item.title} className="flex items-start gap-4 rounded-xl border border-border/50 bg-background/60 p-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                    <item.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold">{item.title}</p>
+                    <p className="text-lg font-semibold text-primary">{item.value}</p>
+                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card className="border border-border/60 bg-card/90 lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Plano de evolução</CardTitle>
+              <CardDescription>Acompanhe o que já foi desbloqueado e o que vem a seguir.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[320px] pr-4">
+                <div className="space-y-6">
+                  {learningPath.map((step) => (
+                    <div
+                      key={step.title}
+                      className={cn(
+                        "relative rounded-xl border p-5 transition-all",
+                        step.status === "completed" && "border-primary/40 bg-primary/5",
+                        step.status === "in-progress" && "border-accent/40 bg-accent/5 shadow-[var(--shadow-elegant)]",
+                        step.status === "upcoming" && "border-border/60 bg-background/60",
+                      )}
+                    >
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div className="space-y-1.5">
+                          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                            {step.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                            {step.status === "in-progress" && <PlayCircle className="h-3.5 w-3.5 text-accent" />}
+                            {step.status === "upcoming" && <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
+                            {step.status === "completed" ? "Concluído" : step.status === "in-progress" ? "Em andamento" : "Em breve"}
+                          </div>
+                          <h3 className="text-lg font-semibold">{step.title}</h3>
+                          <p className="text-sm text-muted-foreground">{step.description}</p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "w-fit border-foreground/10 text-xs",
+                            step.status === "completed" && "border-primary/50 text-primary",
+                            step.status === "in-progress" && "border-accent/40 text-accent",
+                          )}
+                        >
+                          {step.highlight}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/60 bg-card/90">
+            <CardHeader>
+              <CardTitle>Últimas novidades</CardTitle>
+              <CardDescription>Fique por dentro do que está acontecendo na comunidade.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
+                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Atualização liberada
+                </div>
+                <p className="mt-3 text-sm font-semibold text-primary-foreground">
+                  Nova biblioteca de prompts estratégicos disponível para download.
+                </p>
+                <Button size="sm" variant="link" className="px-0 text-primary">
+                  Acessar agora
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-xl border border-border/50 bg-background/60 p-4">
+                  <p className="text-sm font-semibold">Top 10 projetos em destaque</p>
+                  <p className="text-xs text-muted-foreground">Inspire-se com o que a comunidade está construindo com IA.</p>
+                </div>
+                <div className="rounded-xl border border-border/50 bg-background/60 p-4">
+                  <p className="text-sm font-semibold">Mentorias on demand</p>
+                  <p className="text-xs text-muted-foreground">A agenda da próxima semana abre amanhã às 8h.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </main>
     </div>
   );
