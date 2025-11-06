@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
 import logo from "@/assets/logo-ia-do-zero.svg";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const navLinks = [
   { label: "Resumo", href: "#overview" },
@@ -50,6 +51,7 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="sm"
