@@ -9,6 +9,7 @@ import ProgramHighlights from "@/components/sections/ProgramHighlights";
 import ModuleTimeline from "@/components/sections/ModuleTimeline";
 import InstructorSpotlight from "@/components/sections/InstructorSpotlight";
 import VisualShowcase from "@/components/sections/VisualShowcase";
+import CertificateShowcase from "@/components/sections/CertificateShowcase";
 import CtaBanner from "@/components/sections/CtaBanner";
 import { useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
@@ -19,6 +20,7 @@ const navLinks = [
   { label: "Programa", href: "#program" },
   { label: "Cronograma", href: "#timeline" },
   { label: "Mentoria", href: "#mentoria" },
+  { label: "Certificado", href: "#certificate" },
   { label: "Depoimentos", href: "#testimonials" },
   { label: "Planos", href: "#plans" },
 ];
@@ -79,6 +81,7 @@ const Index = () => {
           <BrandShowcase />
           <ProgramHighlights />
           <VisualShowcase />
+          <CertificateShowcase />
           <ModuleTimeline />
           <InstructorSpotlight />
           <PricingPlans />
