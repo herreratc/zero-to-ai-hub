@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import CompletionCertificate from "@/components/dashboard/CompletionCertificate";
 import {
   Award,
   BookOpen,
@@ -314,6 +315,216 @@ const Dashboard = () => {
       ? "Você concluiu todos os capítulos do ebook. Continue revisando sempre que precisar!"
       : `Você leu ${completedModules} de ${totalEbookModules} capítulos. Marque cada capítulo após finalizar a leitura.`;
 
+  const certificateUnlocked = completedModules === totalEbookModules;
+
+  const handleDownloadCertificate = () => {
+    if (!certificateUnlocked) {
+      toast.info("Finalize o ebook ou as videoaulas para liberar o certificado digital.");
+      return;
+    }
+
+    const issueDate = new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(new Date());
+
+    const certificateHtml = `<!DOCTYPE html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="utf-8" />
+          <title>Certificado Zero to AI Hub</title>
+          <style>
+            * { box-sizing: border-box; }
+            body {
+              margin: 0;
+              padding: 0;
+              font-family: 'Inter', 'Segoe UI', sans-serif;
+              background: #0f172a;
+              color: #0f172a;
+            }
+            .certificate-wrapper {
+              width: 100vw;
+              height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 32px;
+              background: radial-gradient(circle at top, rgba(56,97,251,0.08), transparent 55%);
+            }
+            .certificate-card {
+              width: 842px;
+              max-width: 100%;
+              padding: 72px 80px;
+              background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(241,245,249,0.95));
+              border-radius: 28px;
+              border: 2px solid rgba(56,97,251,0.12);
+              box-shadow: 0 40px 80px rgba(15,23,42,0.25);
+              position: relative;
+              overflow: hidden;
+            }
+            .certificate-card::before {
+              content: '';
+              position: absolute;
+              inset: 0;
+              border-radius: 28px;
+              padding: 3px;
+              background: linear-gradient(135deg, rgba(56,97,251,0.2), rgba(129,161,255,0.05));
+              mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+              -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+              mask-composite: exclude;
+              -webkit-mask-composite: xor;
+            }
+            .certificate-content {
+              position: relative;
+              z-index: 1;
+              display: flex;
+              flex-direction: column;
+              gap: 48px;
+              align-items: center;
+              text-align: center;
+            }
+            .certificate-header {
+              display: flex;
+              flex-direction: column;
+              gap: 12px;
+              text-transform: uppercase;
+              letter-spacing: 0.32em;
+            }
+            .certificate-header h1 {
+              font-size: 48px;
+              letter-spacing: 0.18em;
+              margin: 0;
+              color: #1d4ed8;
+            }
+            .certificate-header p {
+              margin: 0;
+              font-size: 13px;
+              color: #475569;
+              font-weight: 600;
+            }
+            .certificate-body {
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+              color: #1f2937;
+              max-width: 560px;
+            }
+            .certificate-name {
+              font-size: 32px;
+              font-weight: 700;
+              color: #1d4ed8;
+              letter-spacing: 0.04em;
+            }
+            .certificate-footer {
+              width: 100%;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              text-transform: uppercase;
+              color: #475569;
+              font-size: 12px;
+              letter-spacing: 0.24em;
+            }
+            .certificate-line {
+              width: 200px;
+              height: 1px;
+              background: #cbd5f5;
+              margin-bottom: 8px;
+            }
+            .certificate-seal {
+              position: absolute;
+              top: 72px;
+              right: 72px;
+              width: 124px;
+              height: 124px;
+              border-radius: 999px;
+              border: 6px solid rgba(56,97,251,0.25);
+              background: linear-gradient(135deg, rgba(56,97,251,1), rgba(37,99,235,0.9));
+              color: #fff;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              gap: 6px;
+              box-shadow: 0 12px 30px rgba(15,23,42,0.25);
+            }
+            .seal-title {
+              font-size: 12px;
+              font-weight: 700;
+              letter-spacing: 0.32em;
+            }
+            .seal-subtitle {
+              font-size: 10px;
+              letter-spacing: 0.28em;
+              opacity: 0.8;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="certificate-wrapper">
+            <div class="certificate-card">
+              <div class="certificate-seal">
+                <div class="seal-title">IA</div>
+                <div style="font-size:36px;font-weight:800;letter-spacing:0.12em;">✔</div>
+                <div class="seal-subtitle">Certificação</div>
+              </div>
+              <div class="certificate-content">
+                <div class="certificate-header">
+                  <p>Zero to AI Hub · 180h</p>
+                  <h1>Certificado</h1>
+                  <p>de conclusão oficial</p>
+                </div>
+                <div class="certificate-body">
+                  <p style="letter-spacing:0.32em;text-transform:uppercase;color:#64748b;font-size:12px;margin:0;">Conferimos a</p>
+                  <div class="certificate-name">${displayName}</div>
+                  <p style="line-height:1.6;font-size:15px;margin:0;">
+                    pela conclusão integral do programa <strong>"IA do Zero"</strong>, cumprindo 100% das atividades obrigatórias e
+                    projetos aplicados. Este certificado confirma ${displayName.split(" ")[0] || displayName}
+                    como profissional apto a implementar soluções com Inteligência Artificial Generativa.
+                  </p>
+                </div>
+                <div class="certificate-footer">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                    <div class="certificate-line"></div>
+                    <span>Coordenação Pedagógica</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                    <div class="certificate-line"></div>
+                    <span>Emissão</span>
+                    <span style="letter-spacing:0.08em;text-transform:none;font-size:11px;">${issueDate}</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                    <div class="certificate-line"></div>
+                    <span>Registro #IAZD-2024</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>`;
+
+    const certificateWindow = window.open("", "_blank", "width=960,height=720");
+
+    if (!certificateWindow) {
+      toast.error("Não foi possível gerar o certificado. Desative o bloqueador de pop-ups e tente novamente.");
+      return;
+    }
+
+    certificateWindow.document.write(certificateHtml);
+    certificateWindow.document.close();
+    certificateWindow.focus();
+
+    setTimeout(() => {
+      certificateWindow.print();
+    }, 300);
+
+    certificateWindow.onafterprint = () => {
+      certificateWindow.close();
+    };
+  };
+
   const handleModuleToggle = (moduleId: string, checked: boolean) => {
     setEbookProgress((prev) => ({
       ...prev,
@@ -438,6 +649,15 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-12 space-y-10">
+        <CompletionCertificate
+          studentName={displayName}
+          isUnlocked={certificateUnlocked}
+          onDownload={handleDownloadCertificate}
+          progressValue={progressValue}
+          completedModules={completedModules}
+          totalModules={totalEbookModules}
+        />
+
         <div className="grid gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-2 border border-border/60 bg-card/90 shadow-[var(--shadow-elegant)]">
             <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
