@@ -31,7 +31,7 @@ const Hero = () => {
                 id="hero-heading"
                 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.05] text-foreground"
               >
-                Domine Inteligência Artificial do zero ao deployment com mentoria ao vivo
+                Domine Inteligencia Artificado do Zero ao Avançado
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
                 A jornada mais completa para quem deseja implementar IA no trabalho ou empreender em tecnologia. Aprenda com especialistas que já entregaram soluções reais em grandes empresas.
@@ -56,6 +56,10 @@ const Hero = () => {
                 VER COMO FUNCIONA
               </Button>
             </div>
+
+            <p className="text-xs sm:text-sm text-muted-foreground/90">
+              Matrículas com garantia total de 7 dias e suporte próximo durante toda a jornada.
+            </p>
 
             <div className="grid gap-4 sm:grid-cols-3">
               {stats.map((stat) => (
