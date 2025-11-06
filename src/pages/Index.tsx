@@ -9,7 +9,7 @@ import CtaBanner from "@/components/sections/CtaBanner";
 import EssentialHighlights from "@/components/sections/EssentialHighlights";
 import CurriculumOverview from "@/components/sections/CurriculumOverview";
 import TrustSignals from "@/components/sections/TrustSignals";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { User } from "lucide-react";
 import logo from "@/assets/logo-ia-do-zero.svg";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
@@ -23,8 +23,6 @@ const navLinks = [
 ];
 
 const Index = () => {
-  const navigate = useNavigate();
-
   return (
     <OnboardingProvider>
       <div className="min-h-screen bg-background">
@@ -61,14 +59,16 @@ const Index = () => {
               Ver Planos
             </Button>
             <Button
+              asChild
               variant="outline"
               size="sm"
               className="gap-2 border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary"
-              onClick={() => navigate("/auth")}
             >
-              <User className="w-4 h-4" />
-              <span className="hidden sm:inline">Área do Aluno</span>
-              <span className="sm:hidden">Entrar</span>
+              <Link to="/auth">
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">Área do Aluno</span>
+                <span className="sm:hidden">Entrar</span>
+              </Link>
             </Button>
           </div>
         </div>
