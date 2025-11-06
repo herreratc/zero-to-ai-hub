@@ -99,6 +99,16 @@ const PricingPlans = () => {
             </Card>
           ))}
         </div>
+
+        <div className="mt-12 flex flex-col gap-3 items-center text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/80">
+            Compra protegida
+          </p>
+          <p className="max-w-2xl text-sm sm:text-base text-muted-foreground">
+            Se em até 7 dias você entender que não é o momento certo, basta enviar uma mensagem e cancelamos sua matrícula com reembolso integral.
+            Mantemos sua vaga garantida para uma próxima turma.
+          </p>
+        </div>
       </div>
     </section>
   );

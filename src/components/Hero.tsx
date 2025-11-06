@@ -57,6 +57,10 @@ const Hero = () => {
               </Button>
             </div>
 
+            <p className="text-xs sm:text-sm text-muted-foreground/90">
+              Matrículas com garantia total de 7 dias e suporte próximo durante toda a jornada.
+            </p>
+
             <div className="grid gap-4 sm:grid-cols-3">
               {stats.map((stat) => (
                 <div
