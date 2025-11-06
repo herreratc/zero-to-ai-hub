@@ -403,7 +403,25 @@ const Dashboard = () => {
       ? "Você concluiu todos os capítulos do ebook. Continue revisando sempre que precisar!"
       : `Você leu ${completedModules} de ${totalEbookModules} capítulos. Marque cada capítulo após finalizar a leitura.`;
 
-  const certificateUnlocked = completedModules === totalEbookModules;
+  const completedVideoModules = useMemo(
+    () =>
+      videoModules.reduce((count, module) => {
+        return videoProgress[module.id] ? count + 1 : count;
+      }, 0),
+    [videoProgress],
+  );
+
+  const videoProgressValue =
+    totalVideoModules === 0 ? 0 : Math.round((completedVideoModules / totalVideoModules) * 100);
+  const videoProgressBadgeLabel = `${completedVideoModules}/${totalVideoModules} aulas`;
+  const videoProgressDescription =
+    completedVideoModules === totalVideoModules
+      ? "Você assistiu a todas as videoaulas disponíveis. Continue revisando os conteúdos favoritos!"
+      : `Você assistiu ${completedVideoModules} de ${totalVideoModules} videoaulas. Marque cada aula após concluir.`;
+
+  const hasCompletedEbook = completedModules === totalEbookModules;
+  const hasCompletedVideos = completedVideoModules === totalVideoModules;
+  const certificateUnlocked = hasCompletedEbook || hasCompletedVideos;
 
   const handleDownloadCertificate = () => {
     if (!certificateUnlocked) {

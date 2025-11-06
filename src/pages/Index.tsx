@@ -1,4 +1,7 @@
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { User } from "lucide-react";
+
 import Hero from "@/components/Hero";
 import PricingPlans from "@/components/PricingPlans";
 import FAQ from "@/components/FAQ";
@@ -9,11 +12,11 @@ import CtaBanner from "@/components/sections/CtaBanner";
 import EssentialHighlights from "@/components/sections/EssentialHighlights";
 import CurriculumOverview from "@/components/sections/CurriculumOverview";
 import TrustSignals from "@/components/sections/TrustSignals";
-import { useNavigate } from "react-router-dom";
-import { User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo-ia-do-zero.svg";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 import ThemeToggle from "@/components/ThemeToggle";
+import { supabase } from "@/integrations/supabase/client";
 
 const navLinks = [
   { label: "Resumo", href: "#overview" },
@@ -23,7 +26,33 @@ const navLinks = [
 ];
 
 const Index = () => {
-  const navigate = useNavigate();
+  const [studentAreaTarget, setStudentAreaTarget] = useState("/auth");
+
+  useEffect(() => {
+    const updateTarget = (hasSession: boolean) => {
+      setStudentAreaTarget(hasSession ? "/dashboard" : "/auth");
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      updateTarget(Boolean(session?.user));
+    });
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        updateTarget(Boolean(session?.user));
+      })
+      .catch((error) => {
+        console.error("Falha ao verificar sessão do aluno", error);
+        updateTarget(false);
+      });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <OnboardingProvider>
@@ -61,14 +90,16 @@ const Index = () => {
               Ver Planos
             </Button>
             <Button
+              asChild
               variant="outline"
               size="sm"
               className="gap-2 border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary"
-              onClick={() => navigate("/auth")}
             >
-              <User className="w-4 h-4" />
-              <span className="hidden sm:inline">Área do Aluno</span>
-              <span className="sm:hidden">Entrar</span>
+              <Link to={studentAreaTarget}>
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">Área do Aluno</span>
+                <span className="sm:hidden">Entrar</span>
+              </Link>
             </Button>
           </div>
         </div>
