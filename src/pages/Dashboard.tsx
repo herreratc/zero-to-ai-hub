@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -667,113 +666,134 @@ const Dashboard = () => {
 
   const activeProductivity = productivityData[range];
 
+  const quickHighlights = useMemo(
+    () => [
+      {
+        id: "ebook",
+        title: "Ebook IA do Zero",
+        value: `${progressValue}%`,
+        caption: progressBadgeLabel,
+        description: progressDescription,
+        icon: BookOpen,
+        iconClass: "bg-primary/10 text-primary",
+        badgeClass: "border-primary/40 bg-primary/10 text-primary",
+      },
+      {
+        id: "video",
+        title: "Videoaulas guiadas",
+        value: `${videoProgressValue}%`,
+        caption: videoProgressBadgeLabel,
+        description: videoProgressDescription,
+        icon: PlayCircle,
+        iconClass: "bg-accent/10 text-accent",
+        badgeClass: "border-accent/40 bg-accent/10 text-accent",
+      },
+      {
+        id: "streak",
+        title: "Sequência ativa",
+        value: "7 dias",
+        caption: "Rotina consistente",
+        description: "Mantenha blocos curtos de foco para avançar diariamente.",
+        icon: Flame,
+        iconClass: "bg-orange-400/10 text-orange-400",
+        badgeClass: "border-orange-300/40 bg-orange-400/10 text-orange-400",
+      },
+    ],
+    [progressBadgeLabel, progressDescription, progressValue, videoProgressBadgeLabel, videoProgressDescription, videoProgressValue],
+  );
+
+  const nextMilestone = useMemo(() => {
+    return (
+      learningPath.find((step) => step.status === "in-progress") ??
+      learningPath.find((step) => step.status === "upcoming") ??
+      learningPath[learningPath.length - 1]
+    );
+  }, []);
+
   return (
     <div className="relative min-h-screen bg-background" style={{ background: "var(--dashboard-background)" }}>
-      <header className="relative border-b border-border/40 bg-gradient-to-br from-primary/15 via-background to-background">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(56,97,251,0.2),_transparent_55%)]" />
-        <div className="relative container mx-auto px-4 py-10 space-y-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-primary">
-                <Sparkles className="h-3 w-3" />
-                Dashboard do aluno
-              </div>
-              <div className="flex items-center gap-4">
-                <Avatar className="h-14 w-14 border border-primary/40">
-                  <AvatarFallback className="text-lg font-semibold text-primary">
-                    {displayName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-                    Olá, {displayName} 👋
-                  </h1>
-                  <p className="text-muted-foreground">
-                    Seu plano personalizado está pronto. Continue evoluindo na jornada para dominar IA aplicada.
-                  </p>
+      <header className="relative overflow-hidden border-b border-border/40 bg-gradient-to-br from-background via-primary/10 to-background">
+        <div className="pointer-events-none absolute inset-0 opacity-70" style={{ background: "radial-gradient(circle at top right, rgba(56,97,251,0.18), transparent 55%)" }} />
+        <div className="relative container mx-auto px-4 py-12">
+          <div className="flex flex-col gap-10">
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-wide text-primary">
+                  <Sparkles className="h-3 w-3" />
+                  Jornada Zero to AI
+                </div>
+                <div className="flex items-center gap-2">
+                  <ThemeToggle />
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary" onClick={() => navigate("/")}>
+                    Central de suporte
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sair
+                  </Button>
                 </div>
               </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <ThemeToggle />
-              <Button variant="outline" size="sm" className="border-primary/40" onClick={() => navigate("/")}>
-                Central de suporte
-              </Button>
-              <Button size="sm" className="shadow-[var(--shadow-elegant)]">
-                <PlayCircle className="mr-2 h-4 w-4" />
-                Continuar última aula
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sair
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Card className="bg-card/80 backdrop-blur">
-              <CardHeader className="pb-3">
-                <CardDescription>Progresso do ebook</CardDescription>
-                <div className="flex items-end justify-between">
-                  <CardTitle className="text-3xl font-semibold">{progressValue}%</CardTitle>
-                  <Badge variant="outline" className="border-primary/50 text-primary">
-                    {progressBadgeLabel}
-                  </Badge>
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-start gap-4">
+                  <Avatar className="mt-1 h-16 w-16 border border-primary/40">
+                    <AvatarFallback className="text-xl font-semibold text-primary">
+                      {displayName.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-4">
+                    <div>
+                      <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Olá, {displayName} 👋</h1>
+                      <p className="text-sm text-muted-foreground md:text-base">
+                        Simplificamos sua visão geral para você focar no que realmente importa: dominar IA aplicada com consistência.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button size="sm" className="shadow-[var(--shadow-elegant)]">
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Continuar última aula
+                      </Button>
+                      <Button variant="outline" size="sm" className="border-primary/40">
+                        Ver trilha completa
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <Progress value={progressValue} className="h-2 bg-muted" />
-                <p className="mt-3 text-xs text-muted-foreground">{progressDescription}</p>
-              </CardContent>
-            </Card>
+                {nextMilestone && (
+                  <div className="w-full max-w-md rounded-2xl border border-border/60 bg-background/70 p-6 shadow-[var(--shadow-elegant)]">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                      <Compass className="h-3.5 w-3.5" />
+                      Próximo foco
+                    </div>
+                    <h2 className="mt-4 text-xl font-semibold text-foreground">{nextMilestone.title}</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">{nextMilestone.description}</p>
+                    <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {nextMilestone.highlight}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
-            <Card className="bg-card/80 backdrop-blur">
-              <CardHeader className="pb-3">
-                <CardDescription>Progresso das videoaulas</CardDescription>
-                <div className="flex items-end justify-between">
-                  <CardTitle className="text-3xl font-semibold">{videoProgressValue}%</CardTitle>
-                  <Badge variant="outline" className="border-accent/50 text-accent">
-                    {videoProgressBadgeLabel}
-                  </Badge>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {quickHighlights.map((item) => (
+                <div key={item.id} className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-background/80 p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-full ${item.iconClass}`}>
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <Badge variant="outline" className={`rounded-full px-3 py-1 text-xs ${item.badgeClass}`}>
+                      {item.caption}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">{item.title}</p>
+                    <p className="text-3xl font-semibold tracking-tight">{item.value}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{item.description}</p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <Progress value={videoProgressValue} className="h-2 bg-muted" />
-                <p className="mt-3 text-xs text-muted-foreground">{videoProgressDescription}</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/80 backdrop-blur">
-              <CardHeader className="pb-2">
-                <CardDescription>Horas dedicadas</CardDescription>
-                <CardTitle className="text-2xl font-semibold">18h 40m</CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground">
-                +4h em relação à semana anterior. Continue com sessões de foco de 45 minutos.
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/80 backdrop-blur">
-              <CardHeader className="pb-2">
-                <CardDescription>Sequência ativa</CardDescription>
-                <CardTitle className="flex items-center gap-2 text-2xl font-semibold">
-                  <Flame className="h-5 w-5 text-orange-400" /> 7 dias
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground">
-                Complete uma atividade por dia para desbloquear a mentoria exclusiva da semana.
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/80 backdrop-blur">
-              <CardHeader className="pb-2">
-                <CardDescription>Próxima entrega</CardDescription>
-                <CardTitle className="text-2xl font-semibold">Projeto 02</CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground">
-                Entrega do MVP com automações. Feedback dos mentores em 26 Jan.
-              </CardContent>
-            </Card>
+              ))}
+            </div>
           </div>
         </div>
       </header>
@@ -788,14 +808,12 @@ const Dashboard = () => {
           totalModules={totalEbookModules}
         />
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2 border border-border/60 bg-card/90 shadow-[var(--shadow-elegant)]">
+        <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+          <Card className="border border-border/60 bg-card/90 shadow-[var(--shadow-elegant)]">
             <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle>Seu ritmo de aprendizado</CardTitle>
-                <CardDescription>
-                  Compare o volume de aulas assistidas e práticas concluídas no período selecionado.
-                </CardDescription>
+                <CardDescription>Visualize a evolução entre aulas assistidas e práticas concluídas.</CardDescription>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/60 p-1 text-xs">
                 <Button
@@ -816,7 +834,7 @@ const Dashboard = () => {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="space-y-6">
               <ChartContainer config={chartConfig} className="h-[300px]">
                 <LineChart data={activeProductivity} margin={{ left: 12, right: 12 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.4)" />
@@ -827,8 +845,8 @@ const Dashboard = () => {
                   <Line type="monotone" dataKey="practice" stroke="var(--color-practice)" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ChartContainer>
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-border/60 bg-background/60 p-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-xl border border-border/60 bg-background/70 p-4">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Tempo médio por sessão</span>
                     <Badge variant="outline" className="border-primary/40 text-primary">
@@ -836,11 +854,9 @@ const Dashboard = () => {
                     </Badge>
                   </div>
                   <p className="mt-2 text-lg font-semibold">47 minutos</p>
-                  <p className="text-xs text-muted-foreground">
-                    Ajuste os blocos de estudo para manter o foco sem interrupções.
-                  </p>
+                  <p className="text-xs text-muted-foreground">Ideal para manter foco profundo sem sobrecarga.</p>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-background/60 p-4">
+                <div className="rounded-xl border border-border/60 bg-background/70 p-4">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Taxa de conclusão</span>
                     <Badge variant="outline" className="border-accent/40 text-accent">
@@ -848,36 +864,25 @@ const Dashboard = () => {
                     </Badge>
                   </div>
                   <p className="mt-2 text-lg font-semibold">82%</p>
-                  <p className="text-xs text-muted-foreground">
-                    Excelente! Aproveite para documentar os principais aprendizados da semana.
-                  </p>
+                  <p className="text-xs text-muted-foreground">Documente aprendizados-chave ao fim de cada aula.</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border border-border/60 bg-card/90">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Próximas sessões</CardTitle>
-                  <CardDescription>Prepare-se para os encontros ao vivo.</CardDescription>
-                </div>
-                <Badge variant="outline" className="border-primary/40 text-primary">
-                  2 eventos
-                </Badge>
-              </div>
+            <CardHeader className="space-y-1">
+              <CardTitle>Agenda da semana</CardTitle>
+              <CardDescription>Organize-se para aproveitar cada encontro ao vivo.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-5">
               {upcomingSessions.map((session) => (
-                <div key={session.title} className="rounded-xl border border-border/50 bg-background/60 p-4">
+                <div key={session.title} className="rounded-2xl border border-border/60 bg-background/70 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-2">
                       <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5" />
-                        <span>
-                          {session.date} • {session.time}
-                        </span>
+                        {session.date} • {session.time}
                       </div>
                       <h3 className="text-base font-semibold leading-tight">{session.title}</h3>
                       <p className="text-xs text-muted-foreground">{session.type}</p>
@@ -890,14 +895,14 @@ const Dashboard = () => {
               ))}
             </CardContent>
           </Card>
-        </div>
+        </section>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="border border-border/60 bg-card/90 lg:col-span-2">
+        <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+          <Card className="border border-border/60 bg-card/90">
             <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <CardTitle>Trilhas e recursos premium</CardTitle>
-                <CardDescription>Escolha o próximo passo conforme sua prioridade.</CardDescription>
+                <CardDescription>Escolha a trilha ideal para o momento.</CardDescription>
               </div>
               <Badge variant="outline" className="border-border/60 bg-background/60 text-xs">
                 Atualizado diariamente
@@ -916,181 +921,99 @@ const Dashboard = () => {
                 {resourceTabs.map((tab) => (
                   <TabsContent key={tab.value} value={tab.value}>
                     {tab.value === "ebook" ? (
-                      <div className="space-y-5">
-                        <div className="rounded-xl border border-border/60 bg-background/70 p-6 shadow-[var(--shadow-elegant)]">
-                          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <div className="space-y-2">
-                              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                                <tab.icon className="h-3.5 w-3.5" />
-                                Ebook IA do Zero
-                              </div>
-                              <h3 className="text-xl font-semibold">{tab.title}</h3>
-                              <p className="text-sm text-muted-foreground">{tab.description}</p>
-                            </div>
-                            <div className="w-full space-y-3 rounded-lg border border-border/60 bg-background/60 p-4 md:w-72">
-                              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span>Progresso total</span>
-                                <span className="font-semibold text-foreground">{progressValue}%</span>
-                              </div>
-                              <Progress value={progressValue} className="h-2" />
-                              <p className="text-[11px] text-muted-foreground">
-                                {completedModules} de {totalEbookModules} capítulos concluídos
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+                      <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
                         <div className="space-y-4">
                           {ebookModules.map((module) => {
-                            const checkboxId = `${module.id}-checkbox`;
                             const isCompleted = ebookProgress[module.id];
-
                             return (
                               <div
                                 key={module.id}
-                                className={cn(
-                                  "flex flex-col gap-4 rounded-lg border border-border/60 bg-background/60 p-4 transition-colors md:flex-row md:items-center md:justify-between",
-                                  isCompleted && "border-primary/40 bg-primary/10",
-                                )}
+                                className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/65 p-4 md:flex-row md:items-center md:justify-between"
                               >
-                                <div className="flex items-start gap-3">
-                                  <Checkbox
-                                    id={checkboxId}
-                                    checked={isCompleted}
-                                    onCheckedChange={(checked) => handleModuleToggle(module.id, checked === true)}
-                                  />
-                                  <div className="space-y-2">
-                                    <label htmlFor={checkboxId} className="block text-sm font-semibold leading-snug text-foreground">
-                                      {module.title}
-                                    </label>
-                                    <p className="text-xs text-muted-foreground">{module.description}</p>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <Button variant="outline" size="sm" asChild>
-                                        <a href={module.pdfUrl} target="_blank" rel="noopener noreferrer">
-                                          <FileText className="h-4 w-4" />
-                                          Abrir PDF
-                                        </a>
-                                      </Button>
-                                      <Badge
-                                        variant="outline"
-                                        className={cn(
-                                          "border-border/60 text-[10px] font-semibold uppercase tracking-wide",
-                                          isCompleted ? "border-primary/40 text-primary" : "text-muted-foreground",
-                                        )}
-                                      >
-                                        {isCompleted ? "Leitura concluída" : "Marque após ler"}
-                                      </Badge>
-                                    </div>
+                                <div className="space-y-1">
+                                  <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                                    <FileText className="h-3.5 w-3.5" />
+                                    Capítulo
                                   </div>
+                                  <h3 className="text-base font-semibold leading-tight">{module.title}</h3>
+                                  <p className="text-xs text-muted-foreground">{module.description}</p>
                                 </div>
-                                <div className="flex items-center gap-2 self-end text-xs text-muted-foreground md:self-center">
-                                  {isCompleted ? (
-                                    <>
-                                      <CheckCircle2 className="h-4 w-4 text-primary" />
-                                      <span>Capítulo concluído</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Clock className="h-4 w-4" />
-                                      <span>Em leitura</span>
-                                    </>
-                                  )}
+                                <div className="flex w-full items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/80 p-3 md:w-auto">
+                                  <a
+                                    href={module.pdfUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-xs font-medium text-primary"
+                                  >
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                    Abrir PDF
+                                  </a>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Checkbox
+                                      id={module.id}
+                                      checked={isCompleted}
+                                      onCheckedChange={(checked) => handleModuleToggle(module.id, Boolean(checked))}
+                                    />
+                                    <label htmlFor={module.id} className="cursor-pointer select-none">
+                                      Concluído
+                                    </label>
+                                  </div>
                                 </div>
                               </div>
                             );
                           })}
+                        </div>
+                        <div className="rounded-2xl border border-primary/30 bg-primary/10 p-6">
+                          <div className="space-y-3">
+                            <h4 className="text-lg font-semibold text-primary">Checklist rápido</h4>
+                            <p className="text-xs text-primary/80">
+                              Marque sua leitura e mantenha o progresso do certificado sempre visível.
+                            </p>
+                          </div>
+                          <div className="mt-6 space-y-4 text-xs text-primary/80">
+                            <p>
+                              <strong className="text-sm text-primary">{completedModules}</strong> capítulos concluídos de {totalEbookModules}.
+                            </p>
+                            <p>{progressDescription}</p>
+                          </div>
                         </div>
                       </div>
                     ) : tab.value === "video" ? (
-                      <div className="space-y-5">
-                        <div className="rounded-xl border border-border/60 bg-background/70 p-6 shadow-[var(--shadow-elegant)]">
-                          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <div className="space-y-2">
-                              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                                <tab.icon className="h-3.5 w-3.5" />
-                                Trilha de videoaulas
+                      <div className="space-y-4">
+                        {videoModules.map((module) => {
+                          const isCompleted = videoProgress[module.id];
+                          return (
+                            <div
+                              key={module.id}
+                              className="flex flex-col gap-4 rounded-xl border border-border/60 bg-background/65 p-4 md:flex-row md:items-center md:justify-between"
+                            >
+                              <div className="space-y-2">
+                                <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                                  <Video className="h-3.5 w-3.5" />
+                                  Aula
+                                </div>
+                                <h3 className="text-base font-semibold leading-tight">{module.title}</h3>
+                                <p className="text-xs text-muted-foreground">{module.description}</p>
                               </div>
-                              <h3 className="text-xl font-semibold">{tab.title}</h3>
-                              <p className="text-sm text-muted-foreground">{tab.description}</p>
-                            </div>
-                            <div className="w-full space-y-3 rounded-lg border border-border/60 bg-background/60 p-4 md:w-72">
-                              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span>Progresso total</span>
-                                <span className="font-semibold text-foreground">{videoProgressValue}%</span>
-                              </div>
-                              <Progress value={videoProgressValue} className="h-2" />
-                              <p className="text-[11px] text-muted-foreground">
-                                {completedVideoModules} de {totalVideoModules} aulas assistidas
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          {videoModules.map((module) => {
-                            const checkboxId = `${module.id}-checkbox`;
-                            const isCompleted = videoProgress[module.id];
-
-                            return (
-                              <div
-                                key={module.id}
-                                className={cn(
-                                  "flex flex-col gap-4 rounded-lg border border-border/60 bg-background/60 p-4 transition-colors md:flex-row md:items-center md:justify-between",
-                                  isCompleted && "border-accent/40 bg-accent/10",
-                                )}
-                              >
-                                <div className="flex items-start gap-3">
+                              <div className="flex w-full items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/80 p-3 md:w-auto">
+                                <Button size="sm" variant="outline" className="border-accent/40 text-accent">
+                                  <PlayCircle className="mr-2 h-4 w-4" />
+                                  Assistir aula
+                                </Button>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                   <Checkbox
-                                    id={checkboxId}
+                                    id={module.id}
                                     checked={isCompleted}
-                                    onCheckedChange={(checked) => handleVideoModuleToggle(module.id, checked === true)}
+                                    onCheckedChange={(checked) => handleVideoModuleToggle(module.id, Boolean(checked))}
                                   />
-                                  <div className="space-y-2">
-                                    <label htmlFor={checkboxId} className="block text-sm font-semibold leading-snug text-foreground">
-                                      {module.title}
-                                    </label>
-                                    <p className="text-xs text-muted-foreground">{module.description}</p>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      {module.youtubeUrl ? (
-                                        <Button variant="outline" size="sm" asChild>
-                                          <a href={module.youtubeUrl} target="_blank" rel="noopener noreferrer">
-                                            <ExternalLink className="h-4 w-4" />
-                                            Assistir aula
-                                          </a>
-                                        </Button>
-                                      ) : (
-                                        <Button variant="outline" size="sm" disabled className="cursor-not-allowed opacity-80">
-                                          <ExternalLink className="h-4 w-4" />
-                                          Link em breve
-                                        </Button>
-                                      )}
-                                      <Badge
-                                        variant="outline"
-                                        className={cn(
-                                          "border-border/60 text-[10px] font-semibold uppercase tracking-wide",
-                                          isCompleted ? "border-accent/40 text-accent" : "text-muted-foreground",
-                                        )}
-                                      >
-                                        {isCompleted ? "Aula concluída" : "Marque após assistir"}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 self-end text-xs text-muted-foreground md:self-center">
-                                  {isCompleted ? (
-                                    <>
-                                      <CheckCircle2 className="h-4 w-4 text-accent" />
-                                      <span>Aula concluída</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <PlayCircle className="h-4 w-4" />
-                                      <span>Pronto para assistir</span>
-                                    </>
-                                  )}
+                                  <label htmlFor={module.id} className="cursor-pointer select-none">
+                                    Concluída
+                                  </label>
                                 </div>
                               </div>
-                            );
-                          })}
-                        </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="rounded-xl border border-border/60 bg-background/70 p-6 shadow-[var(--shadow-elegant)]">
@@ -1115,45 +1038,43 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border border-border/60 bg-card/90">
-            <CardHeader>
-              <CardTitle>Reconhecimentos</CardTitle>
-              <CardDescription>Celebrando sua evolução semanal.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {achievements.map((item) => (
-                <div key={item.title} className="flex items-start gap-4 rounded-xl border border-border/50 bg-background/60 p-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                    <item.icon className="h-5 w-5 text-primary" />
+          <div className="space-y-6">
+            <Card className="border border-border/60 bg-card/90">
+              <CardHeader>
+                <CardTitle>Reconhecimentos</CardTitle>
+                <CardDescription>Pequenas vitórias que aceleram sua evolução.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {achievements.map((item) => (
+                  <div key={item.title} className="flex items-start gap-4 rounded-xl border border-border/50 bg-background/70 p-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <item.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold">{item.title}</p>
+                      <p className="text-lg font-semibold text-primary">{item.value}</p>
+                      <p className="text-xs text-muted-foreground">{item.description}</p>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold">{item.title}</p>
-                    <p className="text-lg font-semibold text-primary">{item.value}</p>
-                    <p className="text-xs text-muted-foreground">{item.description}</p>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
+                ))}
+              </CardContent>
+            </Card>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="border border-border/60 bg-card/90 lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Plano de evolução</CardTitle>
-              <CardDescription>Acompanhe o que já foi desbloqueado e o que vem a seguir.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[320px] pr-4">
-                <div className="space-y-6">
+            <Card className="border border-border/60 bg-card/90">
+              <CardHeader>
+                <CardTitle>Plano de evolução</CardTitle>
+                <CardDescription>Enxergue, em uma linha, o que já foi desbloqueado.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                   {learningPath.map((step) => (
                     <div
                       key={step.title}
                       className={cn(
-                        "relative rounded-xl border p-5 transition-all",
+                        "rounded-2xl border p-5",
                         step.status === "completed" && "border-primary/40 bg-primary/5",
                         step.status === "in-progress" && "border-accent/40 bg-accent/5 shadow-[var(--shadow-elegant)]",
-                        step.status === "upcoming" && "border-border/60 bg-background/60",
+                        step.status === "upcoming" && "border-border/60 bg-background/70",
                       )}
                     >
                       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -1181,42 +1102,51 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
 
-          <Card className="border border-border/60 bg-card/90">
-            <CardHeader>
-              <CardTitle>Últimas novidades</CardTitle>
-              <CardDescription>Fique por dentro do que está acontecendo na comunidade.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
-                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Atualização liberada
-                </div>
-                <p className="mt-3 text-sm font-semibold text-primary-foreground">
-                  Nova biblioteca de prompts estratégicos disponível para download.
-                </p>
-                <Button size="sm" variant="link" className="px-0 text-primary">
-                  Acessar agora
-                </Button>
+        <Card className="border border-border/60 bg-card/90">
+          <CardHeader>
+            <CardTitle>Últimas novidades</CardTitle>
+            <CardDescription>Atualizações que podem impulsionar seus próximos passos.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-primary/30 bg-primary/10 p-5">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
+                <Sparkles className="h-3.5 w-3.5" />
+                Atualização liberada
               </div>
-
-              <div className="space-y-4">
-                <div className="rounded-xl border border-border/50 bg-background/60 p-4">
-                  <p className="text-sm font-semibold">Top 10 projetos em destaque</p>
-                  <p className="text-xs text-muted-foreground">Inspire-se com o que a comunidade está construindo com IA.</p>
-                </div>
-                <div className="rounded-xl border border-border/50 bg-background/60 p-4">
-                  <p className="text-sm font-semibold">Mentorias on demand</p>
-                  <p className="text-xs text-muted-foreground">A agenda da próxima semana abre amanhã às 8h.</p>
-                </div>
+              <p className="mt-3 text-sm font-semibold text-primary-foreground">
+                Biblioteca de prompts estratégicos disponível para download.
+              </p>
+              <p className="mt-2 text-xs text-primary/80">
+                Acesse em Recursos premium → Comunidade para salvar seus favoritos.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                <Compass className="h-3.5 w-3.5" />
+                Comunidade
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <p className="mt-3 text-sm font-semibold">Desafio semanal aberto</p>
+              <p className="text-xs text-muted-foreground">
+                Entregue seu protótipo até sexta-feira e receba feedback direto dos mentores.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                <MessageSquare className="h-3.5 w-3.5" />
+                Fórum
+              </div>
+              <p className="mt-3 text-sm font-semibold">Debate sobre monetização</p>
+              <p className="text-xs text-muted-foreground">
+                Aprenda com colegas que fecharam as primeiras vendas usando automações de IA.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
