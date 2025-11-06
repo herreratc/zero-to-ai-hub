@@ -5,24 +5,19 @@ import FAQ from "@/components/FAQ";
 import Testimonials from "@/components/Testimonials";
 import Footer from "@/components/Footer";
 import BrandShowcase from "@/components/sections/BrandShowcase";
-import ProgramHighlights from "@/components/sections/ProgramHighlights";
-import ModuleTimeline from "@/components/sections/ModuleTimeline";
-import InstructorSpotlight from "@/components/sections/InstructorSpotlight";
-import VisualShowcase from "@/components/sections/VisualShowcase";
-import CertificateShowcase from "@/components/sections/CertificateShowcase";
 import CtaBanner from "@/components/sections/CtaBanner";
+import EssentialHighlights from "@/components/sections/EssentialHighlights";
+import CurriculumOverview from "@/components/sections/CurriculumOverview";
 import { useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
 import logo from "@/assets/logo-ia-do-zero.svg";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 
 const navLinks = [
-  { label: "Programa", href: "#program" },
-  { label: "Cronograma", href: "#timeline" },
-  { label: "Mentoria", href: "#mentoria" },
-  { label: "Certificado", href: "#certificate" },
-  { label: "Depoimentos", href: "#testimonials" },
+  { label: "Resumo", href: "#overview" },
+  { label: "Conteúdo", href: "#curriculum" },
   { label: "Planos", href: "#plans" },
+  { label: "Dúvidas", href: "#faq" },
 ];
 
 const Index = () => {
@@ -78,12 +73,9 @@ const Index = () => {
 
         <main className="pt-24 sm:pt-28">
           <Hero />
+          <EssentialHighlights />
           <BrandShowcase />
-          <ProgramHighlights />
-          <VisualShowcase />
-          <CertificateShowcase />
-          <ModuleTimeline />
-          <InstructorSpotlight />
+          <CurriculumOverview />
           <PricingPlans />
           <Testimonials />
           <FAQ />
