@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import ThemeToggle from "@/components/ThemeToggle";
 
 import modulo0Pdf from "../../ebook/Modeulo-0-IA-do-Zero.pdf";
 import modulo1Pdf from "../../ebook/Modulo-1-Introducao-a-Inteligencia-Artificial.pdf";
@@ -454,7 +455,7 @@ const Dashboard = () => {
   const activeProductivity = productivityData[range];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-[rgba(16,24,40,0.7)] to-background">
+    <div className="relative min-h-screen bg-background" style={{ background: "var(--dashboard-background)" }}>
       <header className="relative border-b border-border/40 bg-gradient-to-br from-primary/15 via-background to-background">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(56,97,251,0.2),_transparent_55%)]" />
         <div className="relative container mx-auto px-4 py-10 space-y-8">
@@ -481,6 +482,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <ThemeToggle />
               <Button variant="outline" size="sm" className="border-primary/40" onClick={() => navigate("/")}>
                 Central de suporte
               </Button>
