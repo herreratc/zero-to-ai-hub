@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Clock,
   Compass,
+  ExternalLink,
   FileText,
   Flame,
   LogOut,
@@ -53,7 +54,15 @@ type EbookModule = {
   pdfUrl: string;
 };
 
+type VideoModule = {
+  id: string;
+  title: string;
+  description: string;
+  youtubeUrl?: string;
+};
+
 const EBOOK_PROGRESS_STORAGE_KEY = "ebook-reading-progress";
+const VIDEO_PROGRESS_STORAGE_KEY = "video-watching-progress";
 
 const chartConfig = {
   lessons: {
@@ -147,6 +156,61 @@ const defaultEbookProgress = ebookModules.reduce<Record<string, boolean>>((acc, 
 }, {});
 
 const totalEbookModules = ebookModules.length;
+
+const videoModules: VideoModule[] = [
+  {
+    id: "video-0",
+    title: "Módulo 0 · Boas-vindas e orientações",
+    description: "Entenda como aproveitar as videoaulas e organize sua jornada de estudos.",
+  },
+  {
+    id: "video-1",
+    title: "Módulo 1 · Introdução à Inteligência Artificial",
+    description: "Conceitos fundamentais, evolução da área e aplicações no mercado.",
+  },
+  {
+    id: "video-2",
+    title: "Módulo 2 · Tipos de Inteligência Artificial",
+    description: "Classificações de IA, quando usar cada abordagem e cases reais.",
+  },
+  {
+    id: "video-3",
+    title: "Módulo 3 · Ferramentas essenciais de IA",
+    description: "Tour pelas ferramentas indispensáveis e como configurá-las corretamente.",
+  },
+  {
+    id: "video-4",
+    title: "Módulo 4 · IA Visual na prática",
+    description: "Fluxos para criar imagens e vídeos profissionais com apoio da IA.",
+  },
+  {
+    id: "video-5",
+    title: "Módulo 5 · Automações inteligentes",
+    description: "Automatize processos e conecte a IA a ferramentas populares.",
+  },
+  {
+    id: "video-6",
+    title: "Módulo 6 · Projetos avançados",
+    description: "Construa soluções completas, monitore resultados e publique MVPs.",
+  },
+  {
+    id: "video-7",
+    title: "Módulo 7 · Monetização com IA",
+    description: "Crie ofertas, valide produtos e estruture estratégias de vendas.",
+  },
+  {
+    id: "video-8",
+    title: "Módulo 8 · Futuro da Inteligência Artificial",
+    description: "Mapeie tendências e defina seus próximos passos para continuar evoluindo.",
+  },
+];
+
+const defaultVideoProgress = videoModules.reduce<Record<string, boolean>>((acc, module) => {
+  acc[module.id] = false;
+  return acc;
+}, {});
+
+const totalVideoModules = videoModules.length;
 
 const learningPath: { title: string; description: string; status: LearningStepStatus; highlight?: string }[] = [
   {
@@ -256,6 +320,9 @@ const Dashboard = () => {
   const [ebookProgress, setEbookProgress] = useState<Record<string, boolean>>(() => ({
     ...defaultEbookProgress,
   }));
+  const [videoProgress, setVideoProgress] = useState<Record<string, boolean>>(() => ({
+    ...defaultVideoProgress,
+  }));
 
   useEffect(() => {
     const {
@@ -299,6 +366,26 @@ const Dashboard = () => {
     }
   }, [ebookProgress]);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(VIDEO_PROGRESS_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Record<string, boolean>;
+        setVideoProgress((prev) => ({ ...prev, ...parsed }));
+      }
+    } catch (error) {
+      console.error("Falha ao carregar o progresso das videoaulas", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIDEO_PROGRESS_STORAGE_KEY, JSON.stringify(videoProgress));
+    } catch (error) {
+      console.error("Falha ao salvar o progresso das videoaulas", error);
+    }
+  }, [videoProgress]);
+
   const completedModules = useMemo(
     () =>
       ebookModules.reduce((count, module) => {
@@ -314,8 +401,31 @@ const Dashboard = () => {
       ? "Você concluiu todos os capítulos do ebook. Continue revisando sempre que precisar!"
       : `Você leu ${completedModules} de ${totalEbookModules} capítulos. Marque cada capítulo após finalizar a leitura.`;
 
+  const completedVideoModules = useMemo(
+    () =>
+      videoModules.reduce((count, module) => {
+        return videoProgress[module.id] ? count + 1 : count;
+      }, 0),
+    [videoProgress],
+  );
+
+  const videoProgressValue =
+    totalVideoModules === 0 ? 0 : Math.round((completedVideoModules / totalVideoModules) * 100);
+  const videoProgressBadgeLabel = `${completedVideoModules}/${totalVideoModules} aulas`;
+  const videoProgressDescription =
+    completedVideoModules === totalVideoModules
+      ? "Parabéns! Você assistiu a todas as aulas do curso. Continue revisando sempre que quiser."
+      : `Você assistiu ${completedVideoModules} de ${totalVideoModules} aulas. Marque cada aula após finalizar o vídeo.`;
+
   const handleModuleToggle = (moduleId: string, checked: boolean) => {
     setEbookProgress((prev) => ({
+      ...prev,
+      [moduleId]: checked,
+    }));
+  };
+
+  const handleVideoModuleToggle = (moduleId: string, checked: boolean) => {
+    setVideoProgress((prev) => ({
       ...prev,
       [moduleId]: checked,
     }));
@@ -399,6 +509,22 @@ const Dashboard = () => {
               <CardContent>
                 <Progress value={progressValue} className="h-2 bg-muted" />
                 <p className="mt-3 text-xs text-muted-foreground">{progressDescription}</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/80 backdrop-blur">
+              <CardHeader className="pb-3">
+                <CardDescription>Progresso das videoaulas</CardDescription>
+                <div className="flex items-end justify-between">
+                  <CardTitle className="text-3xl font-semibold">{videoProgressValue}%</CardTitle>
+                  <Badge variant="outline" className="border-accent/50 text-accent">
+                    {videoProgressBadgeLabel}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Progress value={videoProgressValue} className="h-2 bg-muted" />
+                <p className="mt-3 text-xs text-muted-foreground">{videoProgressDescription}</p>
               </CardContent>
             </Card>
 
@@ -642,6 +768,98 @@ const Dashboard = () => {
                                     <>
                                       <Clock className="h-4 w-4" />
                                       <span>Em leitura</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : tab.value === "video" ? (
+                      <div className="space-y-5">
+                        <div className="rounded-xl border border-border/60 bg-background/70 p-6 shadow-[var(--shadow-elegant)]">
+                          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div className="space-y-2">
+                              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                                <tab.icon className="h-3.5 w-3.5" />
+                                Trilha de videoaulas
+                              </div>
+                              <h3 className="text-xl font-semibold">{tab.title}</h3>
+                              <p className="text-sm text-muted-foreground">{tab.description}</p>
+                            </div>
+                            <div className="w-full space-y-3 rounded-lg border border-border/60 bg-background/60 p-4 md:w-72">
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>Progresso total</span>
+                                <span className="font-semibold text-foreground">{videoProgressValue}%</span>
+                              </div>
+                              <Progress value={videoProgressValue} className="h-2" />
+                              <p className="text-[11px] text-muted-foreground">
+                                {completedVideoModules} de {totalVideoModules} aulas assistidas
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          {videoModules.map((module) => {
+                            const checkboxId = `${module.id}-checkbox`;
+                            const isCompleted = videoProgress[module.id];
+
+                            return (
+                              <div
+                                key={module.id}
+                                className={cn(
+                                  "flex flex-col gap-4 rounded-lg border border-border/60 bg-background/60 p-4 transition-colors md:flex-row md:items-center md:justify-between",
+                                  isCompleted && "border-accent/40 bg-accent/10",
+                                )}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <Checkbox
+                                    id={checkboxId}
+                                    checked={isCompleted}
+                                    onCheckedChange={(checked) => handleVideoModuleToggle(module.id, checked === true)}
+                                  />
+                                  <div className="space-y-2">
+                                    <label htmlFor={checkboxId} className="block text-sm font-semibold leading-snug text-foreground">
+                                      {module.title}
+                                    </label>
+                                    <p className="text-xs text-muted-foreground">{module.description}</p>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      {module.youtubeUrl ? (
+                                        <Button variant="outline" size="sm" asChild>
+                                          <a href={module.youtubeUrl} target="_blank" rel="noopener noreferrer">
+                                            <ExternalLink className="h-4 w-4" />
+                                            Assistir aula
+                                          </a>
+                                        </Button>
+                                      ) : (
+                                        <Button variant="outline" size="sm" disabled className="cursor-not-allowed opacity-80">
+                                          <ExternalLink className="h-4 w-4" />
+                                          Link em breve
+                                        </Button>
+                                      )}
+                                      <Badge
+                                        variant="outline"
+                                        className={cn(
+                                          "border-border/60 text-[10px] font-semibold uppercase tracking-wide",
+                                          isCompleted ? "border-accent/40 text-accent" : "text-muted-foreground",
+                                        )}
+                                      >
+                                        {isCompleted ? "Aula concluída" : "Marque após assistir"}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 self-end text-xs text-muted-foreground md:self-center">
+                                  {isCompleted ? (
+                                    <>
+                                      <CheckCircle2 className="h-4 w-4 text-accent" />
+                                      <span>Aula concluída</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <PlayCircle className="h-4 w-4" />
+                                      <span>Pronto para assistir</span>
                                     </>
                                   )}
                                 </div>
