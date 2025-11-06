@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Email inválido" }).max(255, { message: "Email muito longo" }),
@@ -94,7 +95,13 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--gradient-hero)' }}>
+    <div
+      className="relative min-h-screen flex items-center justify-center px-4 bg-background"
+      style={{ background: "var(--gradient-hero)" }}
+    >
+      <div className="absolute right-4 top-4 sm:right-8 sm:top-8">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md shadow-[var(--shadow-elegant)]">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
