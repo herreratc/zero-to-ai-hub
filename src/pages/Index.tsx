@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo-ia-do-zero.svg";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 import ThemeToggle from "@/components/ThemeToggle";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 
 const navLinks = [
   { label: "Resumo", href: "#overview" },
@@ -29,6 +29,11 @@ const Index = () => {
   const [studentAreaTarget, setStudentAreaTarget] = useState("/auth");
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setStudentAreaTarget("/dashboard");
+      return;
+    }
+
     const updateTarget = (hasSession: boolean) => {
       setStudentAreaTarget(hasSession ? "/dashboard" : "/auth");
     };
@@ -52,7 +57,7 @@ const Index = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isSupabaseConfigured]);
 
   return (
     <OnboardingProvider>
