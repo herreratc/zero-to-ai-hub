@@ -5,6 +5,40 @@ import process from 'node:process';
 const DEFAULT_SUPABASE_URL = 'https://yhxkudknfpagrrlsparr.supabase.co';
 const MIGRATIONS_TABLE = 'supabase_migrations';
 
+async function hydrateEnvFromFile() {
+  const envPath = path.resolve('.env');
+
+  try {
+    const contents = await readFile(envPath, 'utf8');
+    for (const rawLine of contents.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) {
+        continue;
+      }
+
+      const equalsIndex = line.indexOf('=');
+      if (equalsIndex === -1) {
+        continue;
+      }
+
+      const key = line.slice(0, equalsIndex).trim();
+      const value = line.slice(equalsIndex + 1).trim().replace(/^['"]|['"]$/g, '');
+
+      if (!key || key in process.env) {
+        continue;
+      }
+
+      process.env[key] = value;
+    }
+  } catch (error) {
+    if (!error || error.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+}
+
+await hydrateEnvFromFile();
+
 const supabaseUrl = process.env.SUPABASE_URL ?? DEFAULT_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const migrationsDir = path.resolve('supabase', 'migrations');
