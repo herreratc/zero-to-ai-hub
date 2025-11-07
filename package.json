@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "supabase:deploy": "node scripts/apply-supabase-migrations.mjs"
+    "supabase:deploy": "node scripts/apply-supabase-migrations.mjs",
+    "students:access": "node scripts/manage-student-access.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

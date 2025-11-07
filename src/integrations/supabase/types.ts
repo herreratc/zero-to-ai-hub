@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          access_granted: boolean
           avatar_url: string | null
           created_at: string
           full_name: string | null
@@ -24,6 +25,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_granted?: boolean
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
@@ -32,6 +34,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_granted?: boolean
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
