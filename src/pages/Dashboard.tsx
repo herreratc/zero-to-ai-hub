@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
@@ -22,8 +22,10 @@ import {
   ExternalLink,
   FileText,
   Flame,
+  Lock,
   LogOut,
   MessageSquare,
+  RefreshCcw,
   PlayCircle,
   Sparkles,
   TrendingUp,
@@ -32,6 +34,11 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import ThemeToggle from "@/components/ThemeToggle";
+import {
+  clearResourceProgressCache,
+  fetchResourceProgress,
+  upsertResourceProgress,
+} from "@/lib/resource-progress";
 
 import modulo0Pdf from "../../ebook/Modeulo-0-IA-do-Zero.pdf";
 import modulo1Pdf from "../../ebook/Modulo-1-Introducao-a-Inteligencia-Artificial.pdf";
@@ -62,8 +69,7 @@ type VideoModule = {
   youtubeUrl?: string;
 };
 
-const EBOOK_PROGRESS_STORAGE_KEY = "ebook-reading-progress";
-const VIDEO_PROGRESS_STORAGE_KEY = "video-watching-progress";
+type DashboardUser = Pick<User, "id" | "email" | "user_metadata">;
 
 const chartConfig = {
   lessons: {
@@ -313,10 +319,21 @@ const achievements = [
   },
 ];
 
+const LOCAL_DEMO_USER: DashboardUser = {
+  id: "local-demo-student",
+  email: "aluno@local.dev",
+  user_metadata: {
+    full_name: "Aluno Demo",
+  },
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<DashboardUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileAccessLoading, setProfileAccessLoading] = useState(isSupabaseConfigured);
+  const [accessGranted, setAccessGranted] = useState(!isSupabaseConfigured);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const [range, setRange] = useState<ProductivityRange>("week");
   const [ebookProgress, setEbookProgress] = useState<Record<string, boolean>>(() => ({
     ...defaultEbookProgress,
@@ -324,11 +341,33 @@ const Dashboard = () => {
   const [videoProgress, setVideoProgress] = useState<Record<string, boolean>>(() => ({
     ...defaultVideoProgress,
   }));
+  const [progressLoading, setProgressLoading] = useState(false);
+  const [progressSaving, setProgressSaving] = useState<Record<string, boolean>>({});
+
+  const rawWhatsAppContact = (import.meta.env.VITE_WHATSAPP_CONTACT as string | undefined) ?? "";
+  const whatsappMessage = ((import.meta.env.VITE_WHATSAPP_CONTACT_MESSAGE as string | undefined) ?? "").trim();
+
+  const sanitizedWhatsAppContact = useMemo(() => rawWhatsAppContact.replace(/\D/g, ""), [rawWhatsAppContact]);
+
+  const whatsappUrl = useMemo(() => {
+    if (!sanitizedWhatsAppContact) {
+      return "https://wa.me/";
+    }
+
+    const query = whatsappMessage ? `?text=${encodeURIComponent(whatsappMessage)}` : "";
+    return `https://wa.me/${sanitizedWhatsAppContact}${query}`;
+  }, [sanitizedWhatsAppContact, whatsappMessage]);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setUser(LOCAL_DEMO_USER);
+      setLoading(false);
+      return;
+    }
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (!session?.user) {
         navigate("/auth");
@@ -336,56 +375,130 @@ const Dashboard = () => {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) {
-        navigate("/auth");
-      }
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+        if (!session?.user) {
+          navigate("/auth");
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Falha ao obter sessão do Supabase", error);
+        setLoading(false);
+      });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [isSupabaseConfigured, navigate]);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      toast.info("Modo offline ativo: seu progresso ficará salvo apenas neste dispositivo.");
+    }
+  }, [isSupabaseConfigured]);
+
+  const fetchProfileAccess = useCallback(async () => {
+    if (!user?.id) {
+      setProfileName(null);
+      setAccessGranted(!isSupabaseConfigured);
+      setProfileAccessLoading(false);
+      return;
+    }
+
+    if (!isSupabaseConfigured) {
+      setAccessGranted(true);
+      setProfileName(user.user_metadata?.full_name ?? null);
+      setProfileAccessLoading(false);
+      return;
+    }
+
+    setProfileAccessLoading(true);
+
     try {
-      const stored = localStorage.getItem(EBOOK_PROGRESS_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as Record<string, boolean>;
-        setEbookProgress((prev) => ({ ...prev, ...parsed }));
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("access_granted, full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
       }
+
+      const granted = Boolean(data?.access_granted);
+      setAccessGranted(granted);
+      setProfileName(data?.full_name ?? user.user_metadata?.full_name ?? null);
     } catch (error) {
-      console.error("Falha ao carregar o progresso do ebook", error);
+      console.error("Falha ao carregar dados de acesso do perfil", error);
+      toast.error("Não foi possível validar a liberação do seu acesso agora. Tente novamente em instantes.");
+    } finally {
+      setProfileAccessLoading(false);
     }
-  }, []);
+  }, [user, isSupabaseConfigured]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(EBOOK_PROGRESS_STORAGE_KEY, JSON.stringify(ebookProgress));
-    } catch (error) {
-      console.error("Falha ao salvar o progresso do ebook", error);
-    }
-  }, [ebookProgress]);
+    void fetchProfileAccess();
+  }, [fetchProfileAccess]);
+
+  const handleRefreshAccess = useCallback(() => {
+    void fetchProfileAccess();
+  }, [fetchProfileAccess]);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(VIDEO_PROGRESS_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as Record<string, boolean>;
-        setVideoProgress((prev) => ({ ...prev, ...parsed }));
+    let isActive = true;
+
+    if (!user?.id || !accessGranted) {
+      setEbookProgress({ ...defaultEbookProgress });
+      setVideoProgress({ ...defaultVideoProgress });
+      setProgressSaving({});
+      setProgressLoading(false);
+      return undefined;
+    }
+
+    const loadProgress = async () => {
+      setProgressLoading(true);
+
+      try {
+        const data = await fetchResourceProgress(user.id);
+
+        if (!isActive) {
+          return;
+        }
+
+        const ebookState = { ...defaultEbookProgress };
+        const videoState = { ...defaultVideoProgress };
+
+        data.forEach((item) => {
+          if (item.resourceType === "ebook" && Object.prototype.hasOwnProperty.call(ebookState, item.resourceId)) {
+            ebookState[item.resourceId] = item.completed;
+          }
+
+          if (item.resourceType === "video" && Object.prototype.hasOwnProperty.call(videoState, item.resourceId)) {
+            videoState[item.resourceId] = item.completed;
+          }
+        });
+
+        setEbookProgress(ebookState);
+        setVideoProgress(videoState);
+      } catch (error) {
+        if (isActive) {
+          console.error("Falha ao carregar progresso salvo no Supabase", error);
+          toast.error("Não foi possível carregar seu progresso agora. Tente novamente em instantes.");
+        }
+      } finally {
+        if (isActive) {
+          setProgressLoading(false);
+        }
       }
-    } catch (error) {
-      console.error("Falha ao carregar o progresso das videoaulas", error);
-    }
-  }, []);
+    };
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(VIDEO_PROGRESS_STORAGE_KEY, JSON.stringify(videoProgress));
-    } catch (error) {
-      console.error("Falha ao salvar o progresso das videoaulas", error);
-    }
-  }, [videoProgress]);
+    loadProgress();
+
+    return () => {
+      isActive = false;
+    };
+  }, [user?.id, accessGranted]);
 
   const completedModules = useMemo(
     () =>
@@ -630,31 +743,133 @@ const Dashboard = () => {
     };
   };
 
-  const handleModuleToggle = (moduleId: string, checked: boolean) => {
+  const handleModuleToggle = async (moduleId: string, checked: boolean) => {
+    if (!user?.id) {
+      toast.error("Faça login novamente para salvar seu progresso.");
+      return;
+    }
+
+    if (!accessGranted) {
+      toast.error("Seu acesso ainda não foi liberado. Aguarde a confirmação manual do pagamento pelo WhatsApp X1.");
+      return;
+    }
+
+    if (progressLoading) {
+      toast.info("Aguarde a sincronização do progresso.");
+      return;
+    }
+
+    const previousValue = ebookProgress[moduleId];
+    const savingKey = `ebook:${moduleId}`;
+
     setEbookProgress((prev) => ({
       ...prev,
       [moduleId]: checked,
     }));
+
+    setProgressSaving((prev) => ({
+      ...prev,
+      [savingKey]: true,
+    }));
+
+    try {
+      await upsertResourceProgress(user.id, "ebook", moduleId, checked);
+    } catch (error) {
+      console.error("Falha ao atualizar o progresso do ebook no Supabase", error);
+      setEbookProgress((prev) => ({
+        ...prev,
+        [moduleId]: previousValue,
+      }));
+      toast.error("Não foi possível atualizar o progresso. Tente novamente.");
+    } finally {
+      setProgressSaving((prev) => {
+        const next = { ...prev };
+        delete next[savingKey];
+        return next;
+      });
+    }
   };
 
-  const handleVideoModuleToggle = (moduleId: string, checked: boolean) => {
+  const handleVideoModuleToggle = async (moduleId: string, checked: boolean) => {
+    if (!user?.id) {
+      toast.error("Faça login novamente para salvar seu progresso.");
+      return;
+    }
+
+    if (!accessGranted) {
+      toast.error("Seu acesso ainda não foi liberado. Aguarde a confirmação manual do pagamento pelo WhatsApp X1.");
+      return;
+    }
+
+    if (progressLoading) {
+      toast.info("Aguarde a sincronização do progresso.");
+      return;
+    }
+
+    const previousValue = videoProgress[moduleId];
+    const savingKey = `video:${moduleId}`;
+
     setVideoProgress((prev) => ({
       ...prev,
       [moduleId]: checked,
     }));
+
+    setProgressSaving((prev) => ({
+      ...prev,
+      [savingKey]: true,
+    }));
+
+    try {
+      await upsertResourceProgress(user.id, "video", moduleId, checked);
+    } catch (error) {
+      console.error("Falha ao atualizar o progresso das aulas no Supabase", error);
+      setVideoProgress((prev) => ({
+        ...prev,
+        [moduleId]: previousValue,
+      }));
+      toast.error("Não foi possível atualizar o progresso. Tente novamente.");
+    } finally {
+      setProgressSaving((prev) => {
+        const next = { ...prev };
+        delete next[savingKey];
+        return next;
+      });
+    }
   };
 
   const handleLogout = async () => {
+    if (!isSupabaseConfigured) {
+      if (user?.id) {
+        clearResourceProgressCache(user.id);
+      }
+      toast.success("Sessão encerrada! Até breve.");
+      navigate("/");
+      return;
+    }
+
     await supabase.auth.signOut();
     toast.success("Logout realizado com sucesso!");
     navigate("/");
   };
 
   const displayName = useMemo(() => {
-    if (!user?.email) return "Aluno";
-    const name = user.user_metadata?.full_name || user.email.split("@")[0];
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  }, [user]);
+    const trimmedProfileName = profileName?.trim();
+    if (trimmedProfileName) {
+      return trimmedProfileName;
+    }
+
+    const metadataName = user?.user_metadata?.full_name?.trim();
+    if (metadataName) {
+      return metadataName;
+    }
+
+    const emailHandle = user?.email?.split("@")[0];
+    if (emailHandle) {
+      return emailHandle.charAt(0).toUpperCase() + emailHandle.slice(1);
+    }
+
+    return "Aluno";
+  }, [profileName, user]);
 
   const quickHighlights = useMemo(
     () => [
@@ -692,15 +907,12 @@ const Dashboard = () => {
     [progressBadgeLabel, progressDescription, progressValue, videoProgressBadgeLabel, videoProgressDescription, videoProgressValue],
   );
 
-  const nextMilestone = useMemo(() => {
-    return (
-      learningPath.find((step) => step.status === "in-progress") ??
-      learningPath.find((step) => step.status === "upcoming") ??
-      learningPath[learningPath.length - 1]
-    );
-  }, []);
+  const nextMilestone =
+    learningPath.find((step) => step.status === "in-progress") ??
+    learningPath.find((step) => step.status === "upcoming") ??
+    learningPath[learningPath.length - 1];
 
-  if (loading) {
+  if (loading || profileAccessLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -708,51 +920,54 @@ const Dashboard = () => {
     );
   }
 
-  const activeProductivity = productivityData[range];
-
-  const quickHighlights = useMemo(
-    () => [
-      {
-        id: "ebook",
-        title: "Ebook IA do Zero",
-        value: `${progressValue}%`,
-        caption: progressBadgeLabel,
-        description: progressDescription,
-        icon: BookOpen,
-        iconClass: "bg-primary/10 text-primary",
-        badgeClass: "border-primary/40 bg-primary/10 text-primary",
-      },
-      {
-        id: "video",
-        title: "Videoaulas guiadas",
-        value: `${videoProgressValue}%`,
-        caption: videoProgressBadgeLabel,
-        description: videoProgressDescription,
-        icon: PlayCircle,
-        iconClass: "bg-accent/10 text-accent",
-        badgeClass: "border-accent/40 bg-accent/10 text-accent",
-      },
-      {
-        id: "streak",
-        title: "Sequência ativa",
-        value: "7 dias",
-        caption: "Rotina consistente",
-        description: "Mantenha blocos curtos de foco para avançar diariamente.",
-        icon: Flame,
-        iconClass: "bg-orange-400/10 text-orange-400",
-        badgeClass: "border-orange-300/40 bg-orange-400/10 text-orange-400",
-      },
-    ],
-    [progressBadgeLabel, progressDescription, progressValue, videoProgressBadgeLabel, videoProgressDescription, videoProgressValue],
-  );
-
-  const nextMilestone = useMemo(() => {
+  if (!accessGranted) {
     return (
-      learningPath.find((step) => step.status === "in-progress") ??
-      learningPath.find((step) => step.status === "upcoming") ??
-      learningPath[learningPath.length - 1]
+      <div
+        className="relative min-h-screen flex items-center justify-center px-4 bg-background"
+        style={{ background: "var(--dashboard-background)" }}
+      >
+        <div className="absolute right-4 top-4 sm:right-8 sm:top-8">
+          <ThemeToggle />
+        </div>
+        <Card className="w-full max-w-xl border border-border/60 bg-card/95 text-center shadow-[var(--shadow-elegant)]">
+          <CardHeader className="space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Lock className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-2xl font-semibold">Pagamento em análise</CardTitle>
+            <CardDescription className="text-base">
+              Assim que confirmarmos manualmente o pagamento pelo WhatsApp X1, liberamos toda a Área do Aluno.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              Olá, {displayName}! Nosso time realiza a liberação manual após validar o comprovante enviado no WhatsApp. Se já
+              recebeu a confirmação, avise a equipe para liberar o seu acesso.
+            </p>
+            <p className="text-xs">
+              Depois que o pagamento for aprovado, clique em "Atualizar status" ou recarregue a página para entrar direto no
+              dashboard.
+            </p>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3">
+            <Button asChild className="w-full">
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                <MessageSquare className="mr-2 h-4 w-4" /> Conversar com suporte no WhatsApp
+              </a>
+            </Button>
+            <Button variant="outline" className="w-full" onClick={handleRefreshAccess}>
+              <RefreshCcw className="mr-2 h-4 w-4" /> Atualizar status
+            </Button>
+            <Button variant="ghost" className="w-full text-sm" onClick={handleLogout}>
+              Sair da conta
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     );
-  }, []);
+  }
+
+  const activeProductivity = productivityData[range];
 
   return (
     <div className="relative min-h-screen bg-background" style={{ background: "var(--dashboard-background)" }}>
@@ -948,9 +1163,16 @@ const Dashboard = () => {
                 <CardTitle>Trilhas e recursos premium</CardTitle>
                 <CardDescription>Escolha a trilha ideal para o momento.</CardDescription>
               </div>
-              <Badge variant="outline" className="border-border/60 bg-background/60 text-xs">
-                Atualizado diariamente
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="border-border/60 bg-background/60 text-xs">
+                  Atualizado diariamente
+                </Badge>
+                {progressLoading && (
+                  <Badge variant="outline" className="border-primary/40 bg-primary/10 text-xs text-primary">
+                    Sincronizando progresso...
+                  </Badge>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="ebook" className="space-y-6">
@@ -969,6 +1191,9 @@ const Dashboard = () => {
                         <div className="space-y-4">
                           {ebookModules.map((module) => {
                             const isCompleted = ebookProgress[module.id];
+                            const progressKey = `ebook:${module.id}`;
+                            const isSaving = Boolean(progressSaving[progressKey]);
+                            const isDisabled = progressLoading || isSaving;
                             return (
                               <div
                                 key={module.id}
@@ -996,10 +1221,14 @@ const Dashboard = () => {
                                     <Checkbox
                                       id={module.id}
                                       checked={isCompleted}
-                                      onCheckedChange={(checked) => handleModuleToggle(module.id, Boolean(checked))}
+                                      disabled={isDisabled}
+                                      onCheckedChange={(checked) => {
+                                        void handleModuleToggle(module.id, Boolean(checked));
+                                      }}
+                                      aria-busy={isSaving}
                                     />
                                     <label htmlFor={module.id} className="cursor-pointer select-none">
-                                      Concluído
+                                      {isSaving ? "Sincronizando..." : progressLoading ? "Carregando..." : "Concluído"}
                                     </label>
                                   </div>
                                 </div>
@@ -1026,6 +1255,9 @@ const Dashboard = () => {
                       <div className="space-y-4">
                         {videoModules.map((module) => {
                           const isCompleted = videoProgress[module.id];
+                          const progressKey = `video:${module.id}`;
+                          const isSaving = Boolean(progressSaving[progressKey]);
+                          const isDisabled = progressLoading || isSaving;
                           return (
                             <div
                               key={module.id}
@@ -1048,10 +1280,14 @@ const Dashboard = () => {
                                   <Checkbox
                                     id={module.id}
                                     checked={isCompleted}
-                                    onCheckedChange={(checked) => handleVideoModuleToggle(module.id, Boolean(checked))}
+                                    disabled={isDisabled}
+                                    onCheckedChange={(checked) => {
+                                      void handleVideoModuleToggle(module.id, Boolean(checked));
+                                    }}
+                                    aria-busy={isSaving}
                                   />
                                   <label htmlFor={module.id} className="cursor-pointer select-none">
-                                    Concluída
+                                    {isSaving ? "Sincronizando..." : progressLoading ? "Carregando..." : "Concluída"}
                                   </label>
                                 </div>
                               </div>
