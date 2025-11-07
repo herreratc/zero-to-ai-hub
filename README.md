@@ -11,15 +11,16 @@ Aplicação web para a comunidade IA do Zero com autenticação Supabase e sincr
    ```
 
    - `SUPABASE_KEY`: chave `anon` disponível em **Settings → API** (a URL já está pré-configurada para `https://yhxkudknfpagrrlsparr.supabase.co`)
-   - `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` (opcionais): use caso deseje sobrescrever a URL e a chave no build Vite
+   - `SUPABASE_SERVICE_ROLE_KEY`: chave de serviço utilizada pelo script de migrações
+   - `SUPABASE_URL`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` (opcionais): use caso deseje sobrescrever a URL e a chave no build Vite
 
-2. Suba o esquema do banco no Supabase:
+2. Suba o esquema do banco no Supabase (requer a chave **Service Role**, disponível em **Settings → API → Project API keys**):
 
    ```bash
-   supabase db push
+   npm run supabase:deploy
    ```
 
-   Esse comando cria as tabelas `profiles` e `resource_progress`, configura gatilhos e habilita Row Level Security com políticas que restringem o acesso ao dono do registro.
+   O script envia todas as migrações em `supabase/migrations/` para o projeto remoto usando a SQL API, grava o histórico em `supabase_migrations` e pode ser executado quantas vezes for necessário (migrations já aplicadas serão ignoradas).
 
 3. No painel do Supabase, habilite o provedor de **Email/Password** em **Authentication → Providers** para permitir login tradicional.
 
@@ -45,4 +46,4 @@ Aplicação web para a comunidade IA do Zero com autenticação Supabase e sincr
 
 ## Estrutura Supabase
 
-Os arquivos de migração vivem em `supabase/migrations/`. Sempre que alterar o schema, adicione uma nova migração e execute `supabase db push` para sincronizar com o projeto remoto.
+Os arquivos de migração vivem em `supabase/migrations/`. Sempre que alterar o schema, adicione uma nova migração e execute `npm run supabase:deploy` para sincronizar com o projeto remoto.
