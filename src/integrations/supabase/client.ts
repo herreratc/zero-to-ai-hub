@@ -3,20 +3,29 @@ import type { Database } from "./types";
 
 type SupabaseClientType = ReturnType<typeof createClient<Database>>;
 
-const SUPABASE_URL = "https://yhxkudknfpagrrlsparr.supabase.co";
+const DEFAULT_SUPABASE_URL = "https://yhxkudknfpagrrlsparr.supabase.co";
 
 type GlobalWithOptionalProcess = typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
 };
 
-const runtimeSupabaseKey =
+const runtimeEnv =
   typeof globalThis !== "undefined"
-    ? (globalThis as GlobalWithOptionalProcess).process?.env?.SUPABASE_KEY
-    : undefined;
+    ? (globalThis as GlobalWithOptionalProcess).process?.env ?? {}
+    : {};
+
+const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL ??
+  runtimeEnv.VITE_SUPABASE_URL ??
+  runtimeEnv.SUPABASE_URL ??
+  DEFAULT_SUPABASE_URL;
+
+const runtimeSupabaseKey = runtimeEnv.VITE_SUPABASE_PUBLISHABLE_KEY ?? runtimeEnv.SUPABASE_KEY;
+
 const SUPABASE_PUBLISHABLE_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? runtimeSupabaseKey;
 
-export const isSupabaseConfigured = Boolean(SUPABASE_PUBLISHABLE_KEY);
+export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 
 const createMockSupabaseClient = (): SupabaseClientType => {
   const authNotConfiguredResponse = async () => ({
@@ -70,6 +79,6 @@ export const supabase = isSupabaseConfigured
 
 if (!isSupabaseConfigured) {
   console.warn(
-    "Supabase environment variables are missing. Set SUPABASE_KEY or VITE_SUPABASE_PUBLISHABLE_KEY to enable the online mode.",
+    "Supabase environment variables are missing. Provide SUPABASE_KEY (and optionally SUPABASE_URL) or their VITE_ equivalents to enable the online mode.",
   );
 }
