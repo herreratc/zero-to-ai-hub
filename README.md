@@ -10,7 +10,7 @@ Aplicação web para a comunidade IA do Zero com autenticação Supabase e sincr
    cp .env.example .env
    ```
 
-   - `SUPABASE_KEY`: chave `anon` disponível em **Settings → API** (a URL já está pré-configurada para `https://yhxkudknfpagrrlsparr.supabase.co`)
+   - `SUPABASE_KEY`: chave `anon` disponível em **Settings → API** (a URL já está pré-configurada para `https://yhxkudknfpagrrlsparr.supabase.co`). Quando essa variável é preenchida, o Vite replica automaticamente o valor para `VITE_SUPABASE_PUBLISHABLE_KEY`, liberando o login no navegador.
    - `SUPABASE_SERVICE_ROLE_KEY`: chave de serviço utilizada pelo script de migrações
    - `SUPABASE_URL`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` (opcionais): use caso deseje sobrescrever a URL e a chave no build Vite
 
