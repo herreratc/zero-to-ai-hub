@@ -10,8 +10,8 @@ Aplicação web para a comunidade IA do Zero com autenticação Supabase e sincr
    cp .env.example .env
    ```
 
-   - `VITE_SUPABASE_URL`: URL do projeto (ex: `https://<ref>.supabase.co`)
-   - `VITE_SUPABASE_PUBLISHABLE_KEY`: chave `anon` disponível em **Settings → API**
+   - `SUPABASE_KEY`: chave `anon` disponível em **Settings → API** (a URL já está pré-configurada para `https://yhxkudknfpagrrlsparr.supabase.co`)
+   - `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` (opcionais): use caso deseje sobrescrever a URL e a chave no build Vite
 
 2. Suba o esquema do banco no Supabase:
 

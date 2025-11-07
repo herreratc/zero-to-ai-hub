@@ -3,16 +3,27 @@ import type { Database } from "./types";
 
 type SupabaseClientType = ReturnType<typeof createClient<Database>>;
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = "https://yhxkudknfpagrrlsparr.supabase.co";
 
-export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+type GlobalWithOptionalProcess = typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+};
+
+const runtimeSupabaseKey =
+  typeof globalThis !== "undefined"
+    ? (globalThis as GlobalWithOptionalProcess).process?.env?.SUPABASE_KEY
+    : undefined;
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? runtimeSupabaseKey;
+
+export const isSupabaseConfigured = Boolean(SUPABASE_PUBLISHABLE_KEY);
 
 const createMockSupabaseClient = (): SupabaseClientType => {
   const authNotConfiguredResponse = async () => ({
     data: { user: null, session: null },
     error: {
-      message: "Supabase não está configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY.",
+      message:
+        "Supabase não está configurado. Defina SUPABASE_KEY ou VITE_SUPABASE_PUBLISHABLE_KEY.",
       name: "AuthApiError",
       status: 400,
     } as unknown,
@@ -59,6 +70,6 @@ export const supabase = isSupabaseConfigured
 
 if (!isSupabaseConfigured) {
   console.warn(
-    "Supabase environment variables are missing. The app is running in offline mode with local persistence only.",
+    "Supabase environment variables are missing. Set SUPABASE_KEY or VITE_SUPABASE_PUBLISHABLE_KEY to enable the online mode.",
   );
 }

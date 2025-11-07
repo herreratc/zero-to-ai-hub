@@ -25,7 +25,7 @@ const Auth = () => {
   useEffect(() => {
     if (!isSupabaseConfigured) {
       toast.error(
-        "Supabase não está configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY para habilitar o login.",
+        "Supabase não está configurado. Defina SUPABASE_KEY ou VITE_SUPABASE_PUBLISHABLE_KEY para habilitar o login.",
       );
       return;
     }
@@ -50,7 +50,7 @@ const Auth = () => {
 
     if (!isSupabaseConfigured) {
       toast.error(
-        "Supabase não está configurado. Revise as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY.",
+        "Supabase não está configurado. Revise as variáveis SUPABASE_KEY ou VITE_SUPABASE_PUBLISHABLE_KEY.",
       );
       return;
     }
