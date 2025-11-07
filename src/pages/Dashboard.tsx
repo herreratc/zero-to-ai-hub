@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
@@ -22,8 +22,10 @@ import {
   ExternalLink,
   FileText,
   Flame,
+  Lock,
   LogOut,
   MessageSquare,
+  RefreshCcw,
   PlayCircle,
   Sparkles,
   TrendingUp,
@@ -329,6 +331,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<DashboardUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileAccessLoading, setProfileAccessLoading] = useState(isSupabaseConfigured);
+  const [accessGranted, setAccessGranted] = useState(!isSupabaseConfigured);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const [range, setRange] = useState<ProductivityRange>("week");
   const [ebookProgress, setEbookProgress] = useState<Record<string, boolean>>(() => ({
     ...defaultEbookProgress,
@@ -338,6 +343,20 @@ const Dashboard = () => {
   }));
   const [progressLoading, setProgressLoading] = useState(false);
   const [progressSaving, setProgressSaving] = useState<Record<string, boolean>>({});
+
+  const rawWhatsAppContact = (import.meta.env.VITE_WHATSAPP_CONTACT as string | undefined) ?? "";
+  const whatsappMessage = ((import.meta.env.VITE_WHATSAPP_CONTACT_MESSAGE as string | undefined) ?? "").trim();
+
+  const sanitizedWhatsAppContact = useMemo(() => rawWhatsAppContact.replace(/\D/g, ""), [rawWhatsAppContact]);
+
+  const whatsappUrl = useMemo(() => {
+    if (!sanitizedWhatsAppContact) {
+      return "https://wa.me/";
+    }
+
+    const query = whatsappMessage ? `?text=${encodeURIComponent(whatsappMessage)}` : "";
+    return `https://wa.me/${sanitizedWhatsAppContact}${query}`;
+  }, [sanitizedWhatsAppContact, whatsappMessage]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -379,10 +398,57 @@ const Dashboard = () => {
     }
   }, [isSupabaseConfigured]);
 
+  const fetchProfileAccess = useCallback(async () => {
+    if (!user?.id) {
+      setProfileName(null);
+      setAccessGranted(!isSupabaseConfigured);
+      setProfileAccessLoading(false);
+      return;
+    }
+
+    if (!isSupabaseConfigured) {
+      setAccessGranted(true);
+      setProfileName(user.user_metadata?.full_name ?? null);
+      setProfileAccessLoading(false);
+      return;
+    }
+
+    setProfileAccessLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("access_granted, full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      const granted = Boolean(data?.access_granted);
+      setAccessGranted(granted);
+      setProfileName(data?.full_name ?? user.user_metadata?.full_name ?? null);
+    } catch (error) {
+      console.error("Falha ao carregar dados de acesso do perfil", error);
+      toast.error("Não foi possível validar a liberação do seu acesso agora. Tente novamente em instantes.");
+    } finally {
+      setProfileAccessLoading(false);
+    }
+  }, [user, isSupabaseConfigured]);
+
+  useEffect(() => {
+    void fetchProfileAccess();
+  }, [fetchProfileAccess]);
+
+  const handleRefreshAccess = useCallback(() => {
+    void fetchProfileAccess();
+  }, [fetchProfileAccess]);
+
   useEffect(() => {
     let isActive = true;
 
-    if (!user?.id) {
+    if (!user?.id || !accessGranted) {
       setEbookProgress({ ...defaultEbookProgress });
       setVideoProgress({ ...defaultVideoProgress });
       setProgressSaving({});
@@ -432,7 +498,7 @@ const Dashboard = () => {
     return () => {
       isActive = false;
     };
-  }, [user?.id]);
+  }, [user?.id, accessGranted]);
 
   const completedModules = useMemo(
     () =>
@@ -683,6 +749,11 @@ const Dashboard = () => {
       return;
     }
 
+    if (!accessGranted) {
+      toast.error("Seu acesso ainda não foi liberado. Aguarde a confirmação manual do pagamento pelo WhatsApp X1.");
+      return;
+    }
+
     if (progressLoading) {
       toast.info("Aguarde a sincronização do progresso.");
       return;
@@ -722,6 +793,11 @@ const Dashboard = () => {
   const handleVideoModuleToggle = async (moduleId: string, checked: boolean) => {
     if (!user?.id) {
       toast.error("Faça login novamente para salvar seu progresso.");
+      return;
+    }
+
+    if (!accessGranted) {
+      toast.error("Seu acesso ainda não foi liberado. Aguarde a confirmação manual do pagamento pelo WhatsApp X1.");
       return;
     }
 
@@ -777,10 +853,23 @@ const Dashboard = () => {
   };
 
   const displayName = useMemo(() => {
-    if (!user?.email) return "Aluno";
-    const name = user.user_metadata?.full_name || user.email.split("@")[0];
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  }, [user]);
+    const trimmedProfileName = profileName?.trim();
+    if (trimmedProfileName) {
+      return trimmedProfileName;
+    }
+
+    const metadataName = user?.user_metadata?.full_name?.trim();
+    if (metadataName) {
+      return metadataName;
+    }
+
+    const emailHandle = user?.email?.split("@")[0];
+    if (emailHandle) {
+      return emailHandle.charAt(0).toUpperCase() + emailHandle.slice(1);
+    }
+
+    return "Aluno";
+  }, [profileName, user]);
 
   const quickHighlights = useMemo(
     () => [
@@ -823,10 +912,57 @@ const Dashboard = () => {
     learningPath.find((step) => step.status === "upcoming") ??
     learningPath[learningPath.length - 1];
 
-  if (loading) {
+  if (loading || profileAccessLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!accessGranted) {
+    return (
+      <div
+        className="relative min-h-screen flex items-center justify-center px-4 bg-background"
+        style={{ background: "var(--dashboard-background)" }}
+      >
+        <div className="absolute right-4 top-4 sm:right-8 sm:top-8">
+          <ThemeToggle />
+        </div>
+        <Card className="w-full max-w-xl border border-border/60 bg-card/95 text-center shadow-[var(--shadow-elegant)]">
+          <CardHeader className="space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Lock className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-2xl font-semibold">Pagamento em análise</CardTitle>
+            <CardDescription className="text-base">
+              Assim que confirmarmos manualmente o pagamento pelo WhatsApp X1, liberamos toda a Área do Aluno.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              Olá, {displayName}! Nosso time realiza a liberação manual após validar o comprovante enviado no WhatsApp. Se já
+              recebeu a confirmação, avise a equipe para liberar o seu acesso.
+            </p>
+            <p className="text-xs">
+              Depois que o pagamento for aprovado, clique em "Atualizar status" ou recarregue a página para entrar direto no
+              dashboard.
+            </p>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3">
+            <Button asChild className="w-full">
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                <MessageSquare className="mr-2 h-4 w-4" /> Conversar com suporte no WhatsApp
+              </a>
+            </Button>
+            <Button variant="outline" className="w-full" onClick={handleRefreshAccess}>
+              <RefreshCcw className="mr-2 h-4 w-4" /> Atualizar status
+            </Button>
+            <Button variant="ghost" className="w-full text-sm" onClick={handleLogout}>
+              Sair da conta
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     );
   }
