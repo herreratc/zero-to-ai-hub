@@ -751,50 +751,6 @@ const Dashboard = () => {
 
   const activeProductivity = productivityData[range];
 
-  const quickHighlights = useMemo(
-    () => [
-      {
-        id: "ebook",
-        title: "Ebook IA do Zero",
-        value: `${progressValue}%`,
-        caption: progressBadgeLabel,
-        description: progressDescription,
-        icon: BookOpen,
-        iconClass: "bg-primary/10 text-primary",
-        badgeClass: "border-primary/40 bg-primary/10 text-primary",
-      },
-      {
-        id: "video",
-        title: "Videoaulas guiadas",
-        value: `${videoProgressValue}%`,
-        caption: videoProgressBadgeLabel,
-        description: videoProgressDescription,
-        icon: PlayCircle,
-        iconClass: "bg-accent/10 text-accent",
-        badgeClass: "border-accent/40 bg-accent/10 text-accent",
-      },
-      {
-        id: "streak",
-        title: "Sequência ativa",
-        value: "7 dias",
-        caption: "Rotina consistente",
-        description: "Mantenha blocos curtos de foco para avançar diariamente.",
-        icon: Flame,
-        iconClass: "bg-orange-400/10 text-orange-400",
-        badgeClass: "border-orange-300/40 bg-orange-400/10 text-orange-400",
-      },
-    ],
-    [progressBadgeLabel, progressDescription, progressValue, videoProgressBadgeLabel, videoProgressDescription, videoProgressValue],
-  );
-
-  const nextMilestone = useMemo(() => {
-    return (
-      learningPath.find((step) => step.status === "in-progress") ??
-      learningPath.find((step) => step.status === "upcoming") ??
-      learningPath[learningPath.length - 1]
-    );
-  }, []);
-
   return (
     <div className="relative min-h-screen bg-background" style={{ background: "var(--dashboard-background)" }}>
       <header className="relative overflow-hidden border-b border-border/40 bg-gradient-to-br from-background via-primary/10 to-background">
