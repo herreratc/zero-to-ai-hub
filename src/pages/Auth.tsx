@@ -24,8 +24,9 @@ const Auth = () => {
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      toast.info("Ambiente offline: acesso liberado sem login.");
-      navigate("/dashboard");
+      toast.error(
+        "Supabase não está configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY para habilitar o login.",
+      );
       return;
     }
 
@@ -48,8 +49,9 @@ const Auth = () => {
     e.preventDefault();
 
     if (!isSupabaseConfigured) {
-      toast.info("Modo offline: aproveite os conteúdos diretamente.");
-      navigate("/dashboard");
+      toast.error(
+        "Supabase não está configurado. Revise as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY.",
+      );
       return;
     }
 

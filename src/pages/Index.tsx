@@ -30,7 +30,7 @@ const Index = () => {
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      setStudentAreaTarget("/dashboard");
+      setStudentAreaTarget("/auth");
       return;
     }
 
