@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,11 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import ThemeToggle from "@/components/ThemeToggle";
-import { fetchResourceProgress, upsertResourceProgress } from "@/lib/resource-progress";
+import {
+  clearResourceProgressCache,
+  fetchResourceProgress,
+  upsertResourceProgress,
+} from "@/lib/resource-progress";
 
 import modulo0Pdf from "../../ebook/Modeulo-0-IA-do-Zero.pdf";
 import modulo1Pdf from "../../ebook/Modulo-1-Introducao-a-Inteligencia-Artificial.pdf";
@@ -62,6 +66,8 @@ type VideoModule = {
   description: string;
   youtubeUrl?: string;
 };
+
+type DashboardUser = Pick<User, "id" | "email" | "user_metadata">;
 
 const chartConfig = {
   lessons: {
@@ -311,9 +317,17 @@ const achievements = [
   },
 ];
 
+const LOCAL_DEMO_USER: DashboardUser = {
+  id: "local-demo-student",
+  email: "aluno@local.dev",
+  user_metadata: {
+    full_name: "Aluno Demo",
+  },
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<DashboardUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<ProductivityRange>("week");
   const [ebookProgress, setEbookProgress] = useState<Record<string, boolean>>(() => ({
@@ -326,9 +340,15 @@ const Dashboard = () => {
   const [progressSaving, setProgressSaving] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setUser(LOCAL_DEMO_USER);
+      setLoading(false);
+      return;
+    }
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (!session?.user) {
         navigate("/auth");
@@ -336,16 +356,28 @@ const Dashboard = () => {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (!session?.user) {
-        navigate("/auth");
-      }
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+        if (!session?.user) {
+          navigate("/auth");
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Falha ao obter sessão do Supabase", error);
+        setLoading(false);
+      });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [isSupabaseConfigured, navigate]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      toast.info("Modo offline ativo: seu progresso ficará salvo apenas neste dispositivo.");
+    }
+  }, [isSupabaseConfigured]);
 
   useEffect(() => {
     let isActive = true;
@@ -730,6 +762,15 @@ const Dashboard = () => {
   };
 
   const handleLogout = async () => {
+    if (!isSupabaseConfigured) {
+      if (user?.id) {
+        clearResourceProgressCache(user.id);
+      }
+      toast.success("Sessão encerrada! Até breve.");
+      navigate("/");
+      return;
+    }
+
     await supabase.auth.signOut();
     toast.success("Logout realizado com sucesso!");
     navigate("/");
