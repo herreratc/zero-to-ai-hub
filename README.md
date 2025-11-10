@@ -54,7 +54,8 @@ O conteúdo da Área do Aluno só é exibido quando o campo `access_granted` do 
 
 1. Localize o aluno no Supabase (tabela `profiles` ou menu **Authentication → Users**).
 2. Marque `access_granted` como `true` para liberar imediatamente o dashboard.
-3. Se preferir a linha de comando, execute:
+3. Defina o campo `plan` como `basic` ou `complete` de acordo com o pacote contratado (videoaulas, comunidade e mentorias são exclusivos do plano completo).
+4. Se preferir a linha de comando, execute:
 
    ```bash
    npm run students:access -- aluno@email.com
