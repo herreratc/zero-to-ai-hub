@@ -698,51 +698,69 @@ const Dashboard = () => {
       year: "numeric",
     }).format(new Date());
 
+
+    const sanitizedId = user?.id ? user.id.replace(/[^a-zA-Z0-9]/g, "") : "";
+    const certificateCode = sanitizedId ? `IAZD-${sanitizedId.slice(0, 8).toUpperCase()}` : "IAZD-2024-0001";
+    const verificationCode = certificateCode.replace(/[^A-Z0-9]/g, "");
+    const verificationUrl = `https://ia.dozero/certificado/${verificationCode.toLowerCase()}`;
+    const firstName = displayName.trim().split(" ")[0] || displayName.trim();
+    const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const escapedDisplayName = escapeHtml(displayName);
+    const escapedFirstName = escapeHtml(firstName);
+
     const certificateHtml = `<!DOCTYPE html>
       <html lang="pt-BR">
         <head>
           <meta charset="utf-8" />
           <title>Certificado Zero to AI Hub</title>
           <style>
-            * { box-sizing: border-box; }
+            @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;500;600;700&display=swap');
+            * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             body {
               margin: 0;
               padding: 0;
-              font-family: 'Inter', 'Segoe UI', sans-serif;
-              background: #0f172a;
+              font-family: 'Manrope', 'Inter', 'Segoe UI', sans-serif;
+              background: linear-gradient(135deg, #0f172a, #1e1b4b 55%, #0f172a);
               color: #0f172a;
             }
+            @page { size: landscape; margin: 0; }
             .certificate-wrapper {
               width: 100vw;
               height: 100vh;
               display: flex;
               align-items: center;
               justify-content: center;
-              padding: 32px;
-              background: radial-gradient(circle at top, rgba(56,97,251,0.08), transparent 55%);
+              padding: 48px;
             }
             .certificate-card {
-              width: 842px;
+              width: 1120px;
               max-width: 100%;
-              padding: 72px 80px;
-              background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(241,245,249,0.95));
-              border-radius: 28px;
-              border: 2px solid rgba(56,97,251,0.12);
-              box-shadow: 0 40px 80px rgba(15,23,42,0.25);
+              padding: 88px 96px;
+              background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(241,245,249,0.96));
+              border-radius: 40px;
+              border: 1px solid rgba(37,99,235,0.2);
+              box-shadow: 0 40px 120px rgba(15,23,42,0.35);
               position: relative;
               overflow: hidden;
             }
             .certificate-card::before {
               content: '';
               position: absolute;
-              inset: 0;
-              border-radius: 28px;
-              padding: 3px;
-              background: linear-gradient(135deg, rgba(56,97,251,0.2), rgba(129,161,255,0.05));
-              mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-              -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-              mask-composite: exclude;
-              -webkit-mask-composite: xor;
+              inset: 28px;
+              border-radius: 30px;
+              border: 1px solid rgba(37,99,235,0.25);
+              background: linear-gradient(135deg, rgba(37,99,235,0.12), transparent 65%);
+              z-index: 0;
+            }
+            .certificate-card::after {
+              content: '';
+              position: absolute;
+              top: -160px;
+              right: -120px;
+              width: 360px;
+              height: 360px;
+              background: radial-gradient(circle, rgba(59,130,246,0.25), transparent 65%);
+              transform: rotate(25deg);
             }
             .certificate-content {
               position: relative;
@@ -750,129 +768,316 @@ const Dashboard = () => {
               display: flex;
               flex-direction: column;
               gap: 48px;
-              align-items: center;
-              text-align: center;
             }
             .certificate-header {
               display: flex;
-              flex-direction: column;
-              gap: 12px;
-              text-transform: uppercase;
-              letter-spacing: 0.32em;
+              justify-content: space-between;
+              align-items: center;
             }
-            .certificate-header h1 {
-              font-size: 48px;
+            .certificate-brand {
+              display: flex;
+              align-items: center;
+              gap: 18px;
+            }
+            .brand-mark {
+              width: 58px;
+              height: 58px;
+              border-radius: 50%;
+              background: linear-gradient(135deg, #2563eb, #38bdf8);
+              color: #ffffff;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 700;
               letter-spacing: 0.18em;
-              margin: 0;
-              color: #1d4ed8;
+              font-size: 14px;
+              text-transform: uppercase;
             }
-            .certificate-header p {
+            .brand-text p {
               margin: 0;
-              font-size: 13px;
-              color: #475569;
+              font-size: 12px;
+              letter-spacing: 0.32em;
+              text-transform: uppercase;
+              color: #64748b;
               font-weight: 600;
             }
-            .certificate-body {
+            .brand-text span {
+              display: block;
+              margin-top: 6px;
+              font-size: 14px;
+              letter-spacing: 0.08em;
+              color: #1e293b;
+              font-weight: 600;
+              text-transform: uppercase;
+            }
+            .certificate-meta {
+              text-align: right;
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+            }
+            .meta-label {
+              font-size: 11px;
+              letter-spacing: 0.28em;
+              text-transform: uppercase;
+              color: #94a3b8;
+              font-weight: 600;
+            }
+            .meta-value {
+              font-size: 20px;
+              font-weight: 700;
+              color: #1e293b;
+              letter-spacing: 0.12em;
+            }
+            .certificate-title {
+              text-align: center;
               display: flex;
               flex-direction: column;
               gap: 16px;
-              color: #1f2937;
-              max-width: 560px;
+            }
+            .certificate-title span {
+              font-size: 12px;
+              letter-spacing: 0.32em;
+              text-transform: uppercase;
+              color: #94a3b8;
+              font-weight: 600;
             }
             .certificate-name {
-              font-size: 32px;
-              font-weight: 700;
-              color: #1d4ed8;
+              font-family: 'DM Serif Display', 'Georgia', serif;
+              font-size: 56px;
+              margin: 0;
+              color: #0f172a;
               letter-spacing: 0.04em;
             }
-            .certificate-footer {
-              width: 100%;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              text-transform: uppercase;
-              color: #475569;
-              font-size: 12px;
-              letter-spacing: 0.24em;
+            .certificate-description {
+              max-width: 720px;
+              margin: 0 auto;
+              font-size: 17px;
+              line-height: 1.8;
+              color: #334155;
             }
-            .certificate-line {
-              width: 200px;
+            .certificate-highlight {
+              color: #2563eb;
+              font-weight: 600;
+            }
+            .certificate-info {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 28px;
+              padding: 32px 40px;
+              border-radius: 24px;
+              background: rgba(148,163,184,0.12);
+              border: 1px solid rgba(37,99,235,0.18);
+            }
+            .info-block {
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+              text-align: center;
+            }
+            .info-label {
+              font-size: 11px;
+              letter-spacing: 0.28em;
+              text-transform: uppercase;
+              color: #64748b;
+              font-weight: 600;
+            }
+            .info-value {
+              font-size: 18px;
+              font-weight: 700;
+              color: #1e293b;
+              letter-spacing: 0.05em;
+            }
+            .certificate-signatures {
+              display: flex;
+              flex-wrap: wrap;
+              justify-content: space-between;
+              gap: 32px;
+            }
+            .signature {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 12px;
+              min-width: 220px;
+            }
+            .signature-line {
+              width: 220px;
               height: 1px;
-              background: #cbd5f5;
-              margin-bottom: 8px;
+              background: linear-gradient(90deg, transparent, rgba(37,99,235,0.5), transparent);
+            }
+            .signature-name {
+              font-size: 15px;
+              font-weight: 600;
+              color: #1e293b;
+            }
+            .signature-role {
+              font-size: 11px;
+              letter-spacing: 0.22em;
+              text-transform: uppercase;
+              color: #94a3b8;
+            }
+            .certificate-verification {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 32px;
+              padding: 24px 32px;
+              border-radius: 24px;
+              border: 1px solid rgba(148,163,184,0.4);
+              background: rgba(255,255,255,0.92);
+            }
+            .verification-text {
+              font-size: 14px;
+              color: #475569;
+              line-height: 1.6;
+            }
+            .verification-text strong {
+              display: block;
+              font-size: 15px;
+              color: #1e293b;
+            }
+            .verification-link {
+              margin-top: 12px;
+              font-size: 13px;
+              letter-spacing: 0.12em;
+              text-transform: uppercase;
+              color: #2563eb;
+              font-weight: 600;
+            }
+            .certificate-qr {
+              width: 96px;
+              height: 96px;
+              border-radius: 18px;
+              border: 1px solid rgba(37,99,235,0.45);
+              background: repeating-linear-gradient(45deg, rgba(37,99,235,0.12) 0, rgba(37,99,235,0.12) 6px, transparent 6px, transparent 12px);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 12px;
+              color: #2563eb;
+              font-weight: 700;
+              letter-spacing: 0.2em;
+              text-transform: uppercase;
             }
             .certificate-seal {
               position: absolute;
-              top: 72px;
-              right: 72px;
-              width: 124px;
-              height: 124px;
-              border-radius: 999px;
-              border: 6px solid rgba(56,97,251,0.25);
-              background: linear-gradient(135deg, rgba(56,97,251,1), rgba(37,99,235,0.9));
-              color: #fff;
+              right: 110px;
+              bottom: 120px;
+              width: 180px;
+              height: 180px;
+              border-radius: 50%;
+              border: 3px solid rgba(37,99,235,0.35);
               display: flex;
               flex-direction: column;
               align-items: center;
               justify-content: center;
               gap: 6px;
-              box-shadow: 0 12px 30px rgba(15,23,42,0.25);
+              color: #2563eb;
+              text-transform: uppercase;
+              letter-spacing: 0.28em;
+              font-weight: 700;
+              transform: rotate(-8deg);
+              background: radial-gradient(circle, rgba(37,99,235,0.12), transparent 65%);
+              pointer-events: none;
+            }
+            .certificate-seal::before {
+              content: '';
+              position: absolute;
+              inset: 14px;
+              border-radius: 50%;
+              border: 1px dashed rgba(37,99,235,0.6);
             }
             .seal-title {
               font-size: 12px;
-              font-weight: 700;
-              letter-spacing: 0.32em;
+            }
+            .seal-icon {
+              font-size: 36px;
+              letter-spacing: 0.1em;
             }
             .seal-subtitle {
               font-size: 10px;
-              letter-spacing: 0.28em;
-              opacity: 0.8;
+              letter-spacing: 0.24em;
+              opacity: 0.85;
+            }
+            @media print {
+              body { background: #ffffff; }
+              .certificate-wrapper { padding: 0; }
+              .certificate-card { box-shadow: none; }
             }
           </style>
         </head>
         <body>
           <div class="certificate-wrapper">
             <div class="certificate-card">
-              <div class="certificate-seal">
-                <div class="seal-title">IA</div>
-                <div style="font-size:36px;font-weight:800;letter-spacing:0.12em;">✔</div>
-                <div class="seal-subtitle">Certificação</div>
-              </div>
               <div class="certificate-content">
                 <div class="certificate-header">
-                  <p>Zero to AI Hub · 180h</p>
-                  <h1>Certificado</h1>
-                  <p>de conclusão oficial</p>
+                  <div class="certificate-brand">
+                    <div class="brand-mark">IA</div>
+                    <div class="brand-text">
+                      <p>Academia</p>
+                      <span>Zero to AI Hub</span>
+                    </div>
+                  </div>
+                  <div class="certificate-meta">
+                    <span class="meta-label">Código</span>
+                    <span class="meta-value">${certificateCode}</span>
+                  </div>
                 </div>
-                <div class="certificate-body">
-                  <p style="letter-spacing:0.32em;text-transform:uppercase;color:#64748b;font-size:12px;margin:0;">Conferimos a</p>
-                  <div class="certificate-name">${displayName}</div>
-                  <p style="line-height:1.6;font-size:15px;margin:0;">
-                    pela conclusão integral do programa <strong>"IA do Zero"</strong>, cumprindo 100% das atividades obrigatórias e
-                    projetos aplicados. Este certificado confirma ${displayName.split(" ")[0] || displayName}
-                    como profissional apto a implementar soluções com Inteligência Artificial Generativa.
+                <div class="certificate-title">
+                  <span>Certificado de conclusão</span>
+                  <h1 class="certificate-name">${escapedDisplayName}</h1>
+                  <p class="certificate-description">
+                    Certificamos que <span class="certificate-highlight">${escapedDisplayName}</span> concluiu com êxito a Jornada Completa de Inteligência Artificial Aplicada, totalizando 180 horas de conteúdos, mentorias e projetos práticos. ${escapedFirstName} demonstrou domínio na implementação de soluções de IA generativa em contextos profissionais.
                   </p>
                 </div>
-                <div class="certificate-footer">
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-                    <div class="certificate-line"></div>
-                    <span>Coordenação Pedagógica</span>
+                <div class="certificate-info">
+                  <div class="info-block">
+                    <span class="info-label">Emissão</span>
+                    <span class="info-value">${issueDate}</span>
                   </div>
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-                    <div class="certificate-line"></div>
-                    <span>Emissão</span>
-                    <span style="letter-spacing:0.08em;text-transform:none;font-size:11px;">${issueDate}</span>
+                  <div class="info-block">
+                    <span class="info-label">Carga horária</span>
+                    <span class="info-value">180 horas</span>
                   </div>
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-                    <div class="certificate-line"></div>
-                    <span>Registro #IAZD-2024</span>
+                  <div class="info-block">
+                    <span class="info-label">Registro</span>
+                    <span class="info-value">${certificateCode}</span>
                   </div>
                 </div>
+                <div class="certificate-signatures">
+                  <div class="signature">
+                    <div class="signature-line"></div>
+                    <span class="signature-name">João Victor Costa</span>
+                    <span class="signature-role">Head de Educação • IA do Zero</span>
+                  </div>
+                  <div class="signature">
+                    <div class="signature-line"></div>
+                    <span class="signature-name">Comitê Acadêmico</span>
+                    <span class="signature-role">Validação Técnica</span>
+                  </div>
+                </div>
+                <div class="certificate-verification">
+                  <div>
+                    <span class="verification-text">
+                      <strong>Verifique a autenticidade em segundos.</strong>
+                      Aponte a câmera para o QR code ou acesse o endereço abaixo para consultar a validade deste certificado.
+                    </span>
+                    <div class="verification-link">${verificationUrl}</div>
+                  </div>
+                  <div class="certificate-qr">QR</div>
+                </div>
+              </div>
+              <div class="certificate-seal">
+                <div class="seal-title">IA</div>
+                <div class="seal-icon">✔</div>
+                <div class="seal-subtitle">Certificação</div>
               </div>
             </div>
           </div>
         </body>
       </html>`;
+
 
     const certificateWindow = window.open("", "_blank", "width=960,height=720");
 

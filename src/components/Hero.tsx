@@ -4,8 +4,8 @@ import heroImage from "@/assets/hero-ai.jpg";
 import { useOnboarding } from "@/components/onboarding/OnboardingProvider";
 
 const stats = [
+  { value: "180h", label: "Certificação reconhecida" },
   { value: "500+", label: "Carreiras aceleradas" },
-  { value: "50h", label: "de conteúdo aplicado" },
   { value: "4.9/5", label: "Satisfação média" },
 ];
 
@@ -34,7 +34,7 @@ const Hero = () => {
                 Domine Inteligência Artificial do Zero ao Avançado
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-                A jornada mais completa para quem deseja implementar IA no trabalho ou empreender em tecnologia. Aprenda com especialistas que já entregaram soluções reais em grandes empresas.
+                A jornada mais completa para quem deseja implementar IA no trabalho ou empreender em tecnologia. Aprenda com especialistas que já entregaram soluções reais em grandes empresas e finalize com um certificado executivo para comprovar sua evolução.
               </p>
             </div>
 
@@ -57,9 +57,14 @@ const Hero = () => {
               </Button>
             </div>
 
-            <p className="text-xs sm:text-sm text-muted-foreground/90">
-              Matrículas com garantia total de 7 dias e suporte próximo durante toda a jornada.
-            </p>
+            <div className="space-y-2">
+              <p className="text-xs sm:text-sm text-muted-foreground/90">
+                Matrículas com garantia total de 7 dias e suporte próximo durante toda a jornada.
+              </p>
+              <p className="text-xs sm:text-sm text-primary/80">
+                O certificado personalizado é liberado automaticamente após concluir os projetos avaliados pela nossa banca.
+              </p>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               {stats.map((stat) => (
@@ -81,7 +86,7 @@ const Hero = () => {
                 Certificado reconhecido
               </div>
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                Receba certificado com validação de 180h e compartilhável no LinkedIn.
+                Receba certificado executivo de 180h com QR code e validação digital imediata.
               </p>
             </div>
             <div className="overflow-hidden rounded-[3rem] border border-primary/20 bg-gradient-to-br from-primary/20 via-background/90 to-background/60 p-4 shadow-[0_1px_70px_rgba(37,99,235,0.4)]">
