@@ -1,4 +1,4 @@
-import { Award, Clock, Share2, ShieldCheck } from "lucide-react";
+import { Award, Clock, Share2, ShieldCheck, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo-ia-do-zero.svg";
 
@@ -15,13 +15,17 @@ const CertificateShowcase = () => {
             <Award className="h-4 w-4" />
             Certificação Oficial
           </div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background/80 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.3em] text-primary/80">
+            <Shield className="h-4 w-4" />
+            Documento Profissional
+          </div>
           <div className="space-y-4">
             <h2 className="text-3xl sm:text-4xl font-bold leading-tight text-foreground">
               Conclua a Jornada Completa e receba seu certificado exclusivo
             </h2>
             <p className="text-base sm:text-lg text-muted-foreground">
               Valide suas 180 horas de estudos com um documento digital, verificável e pronto para compartilhar no LinkedIn.
-              O certificado é emitido automaticamente após a entrega do projeto final aprovado pela banca.
+              O certificado segue um padrão executivo com selo de autenticidade, código único e área de verificação pública.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -59,11 +63,14 @@ const CertificateShowcase = () => {
             </li>
           </ul>
           <div className="flex flex-wrap items-center gap-3">
-            <Button className="shadow-[0_12px_35px_rgba(37,99,235,0.25)]">
+            <Button
+              className="shadow-[0_12px_35px_rgba(37,99,235,0.25)]"
+              onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}
+            >
               Ver como desbloquear
             </Button>
             <p className="text-sm text-muted-foreground">
-              Complete os módulos obrigatórios e apresente o projeto final para gerar o documento.
+              Complete os módulos obrigatórios e apresente o projeto final para gerar o documento com seu nome e registro oficial.
             </p>
           </div>
         </div>

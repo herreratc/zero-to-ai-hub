@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import BrandShowcase from "@/components/sections/BrandShowcase";
 import CtaBanner from "@/components/sections/CtaBanner";
 import EssentialHighlights from "@/components/sections/EssentialHighlights";
+import CertificateShowcase from "@/components/sections/CertificateShowcase";
 import CurriculumOverview from "@/components/sections/CurriculumOverview";
 import TrustSignals from "@/components/sections/TrustSignals";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 
 const navLinks = [
   { label: "Resumo", href: "#overview" },
+  { label: "Certificado", href: "#certificate" },
   { label: "Conteúdo", href: "#curriculum" },
   { label: "Planos", href: "#plans" },
   { label: "Dúvidas", href: "#faq" },
@@ -113,7 +115,7 @@ const Index = () => {
           </div>
           <div className="hidden border-t border-border/30 bg-muted/10 lg:block">
             <div className="container mx-auto flex items-center justify-between gap-6 px-6 py-2 text-xs text-muted-foreground">
-              <p>Estrutura completa em 8 módulos • Certificação reconhecida • Atualizações mensais</p>
+              <p>Estrutura completa em 8 módulos • Certificado executivo com validação digital • Atualizações mensais</p>
               <button
                 type="button"
                 className="inline-flex items-center gap-2 font-semibold text-primary transition hover:text-primary/80"
@@ -164,11 +166,17 @@ const Index = () => {
                         <span className="mt-1 h-2.5 w-2.5 rounded-full bg-primary"></span>
                         Comunidade, mentorias e suporte acessíveis em um só lugar.
                       </li>
+                      <li className="flex items-start gap-2">
+                        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-primary"></span>
+                        Certificado executivo com selo digital e código de verificação exclusivo.
+                      </li>
                     </ul>
                   </div>
                 </div>
               </div>
             </section>
+
+            <CertificateShowcase />
 
             <section aria-label="Destaques essenciais" className="space-y-16">
               <EssentialHighlights />
