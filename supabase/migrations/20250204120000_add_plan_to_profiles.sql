@@ -2,7 +2,10 @@
 create type if not exists public.profile_plan as enum ('basic', 'complete');
 
 alter table public.profiles
-  add column if not exists plan public.profile_plan not null default 'basic';
+  add column if not exists plan public.profile_plan;
+
+alter table public.profiles
+  alter column plan set default 'basic';
 
 comment on column public.profiles.plan is
   'Plano atual do aluno. Defina manualmente como "complete" para liberar videoaulas, comunidade e mentorias.';
@@ -24,6 +27,9 @@ create policy "Profiles are insertable by owner"
 update public.profiles
 set plan = coalesce(plan, 'basic')
 where plan is null;
+
+alter table public.profiles
+  alter column plan set not null;
 
 drop policy if exists "Profiles are updatable by owner" on public.profiles;
 create policy "Profiles can update personal data"
