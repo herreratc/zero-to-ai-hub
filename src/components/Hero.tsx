@@ -99,10 +99,7 @@ const Hero = () => {
                 Trilhas atualizadas mensalmente com conteúdo hands-on.
               </p>
             </div>
-            <div className="absolute -bottom-16 left-1/2 hidden sm:flex h-32 w-32 -translate-x-1/2 items-center justify-center rounded-full border border-primary/40 bg-background/80 text-center text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-              Comunidade exclusiva
-              <Users className="mt-2 h-4 w-4" />
-            </div>
+            
           </div>
         </div>
       </div>

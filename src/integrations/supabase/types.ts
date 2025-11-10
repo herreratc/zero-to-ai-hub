@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          plan: Database["public"]["Enums"]["profile_plan"]
           updated_at: string
           user_id: string
         }
@@ -30,6 +31,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          plan?: Database["public"]["Enums"]["profile_plan"]
           updated_at?: string
           user_id: string
         }
@@ -39,6 +41,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          plan?: Database["public"]["Enums"]["profile_plan"]
           updated_at?: string
           user_id?: string
         }
@@ -99,7 +102,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      profile_plan: "basic" | "complete"
     }
     CompositeTypes: {
       [_ in never]: never
