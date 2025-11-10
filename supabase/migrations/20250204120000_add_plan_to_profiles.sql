@@ -74,7 +74,7 @@ where plan is null;
 alter table public.profiles
   alter column plan set not null;
 
-drop policy if exists "Profiles are updatable by owner" on public.profiles;
+drop policy if exists "Profiles can update personal data" on public.profiles;
 create policy "Profiles can update personal data"
   on public.profiles
   for update
