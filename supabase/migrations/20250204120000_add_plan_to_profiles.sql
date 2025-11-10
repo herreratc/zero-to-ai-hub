@@ -1,5 +1,48 @@
--- Introduce plano do aluno na tabela de perfis para controlar o acesso a recursos premium
-create type if not exists public.profile_plan as enum ('basic', 'complete');
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_type
+    where typname = 'profile_plan'
+      and typnamespace = 'public'::regnamespace
+  ) then
+    create type public.profile_plan as enum ('basic', 'complete');
+  end if;
+end
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_type
+    where typname = 'profile_plan'
+      and typnamespace = 'public'::regnamespace
+  ) then
+    if not exists (
+      select 1
+      from pg_enum e
+      join pg_type t on t.oid = e.enumtypid
+      where t.typname = 'profile_plan'
+        and t.typnamespace = 'public'::regnamespace
+        and e.enumlabel = 'basic'
+    ) then
+      alter type public.profile_plan add value if not exists 'basic';
+    end if;
+
+    if not exists (
+      select 1
+      from pg_enum e
+      join pg_type t on t.oid = e.enumtypid
+      where t.typname = 'profile_plan'
+        and t.typnamespace = 'public'::regnamespace
+        and e.enumlabel = 'complete'
+    ) then
+      alter type public.profile_plan add value if not exists 'complete';
+    end if;
+  end if;
+end
+$$;
 
 alter table public.profiles
   add column if not exists plan public.profile_plan;
@@ -20,12 +63,12 @@ create policy "Profiles are insertable by owner"
   with check (
     auth.uid() = user_id
     and coalesce(access_granted, false) = false
-    and plan = 'basic'
+    and plan = 'basic'::public.profile_plan
   );
 
 -- Impede que alunos alterem o plano manualmente via update, mantendo apenas dados pessoais editáveis
 update public.profiles
-set plan = coalesce(plan, 'basic')
+set plan = coalesce(plan, 'basic'::public.profile_plan)
 where plan is null;
 
 alter table public.profiles
@@ -52,6 +95,6 @@ create policy "Profiles can update personal data"
         from public.profiles as existing
         where existing.id = profiles.id
       ),
-      'basic'
+      'basic'::public.profile_plan
     )
   );
