@@ -1057,178 +1057,210 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12 space-y-10">
-        <CompletionCertificate
-          studentName={displayName}
-          isUnlocked={certificateUnlocked}
-          onDownload={handleDownloadCertificate}
-          progressValue={progressValue}
-          completedModules={completedModules}
-          totalModules={totalEbookModules}
-        />
+      <main className="container mx-auto px-4 py-12 space-y-12">
+        <section className="grid gap-8 2xl:grid-cols-[2.2fr_1fr]">
+          <div className="space-y-8">
+            <CompletionCertificate
+              studentName={displayName}
+              isUnlocked={certificateUnlocked}
+              onDownload={handleDownloadCertificate}
+              progressValue={progressValue}
+              completedModules={completedModules}
+              totalModules={totalEbookModules}
+            />
 
-        <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-          <Card className="border border-border/60 bg-card/90 shadow-[var(--shadow-elegant)]">
-            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle>Seu ritmo de aprendizado</CardTitle>
-                <CardDescription>Visualize a evolução entre aulas assistidas e práticas concluídas.</CardDescription>
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/60 p-1 text-xs">
-                <Button
-                  size="sm"
-                  variant={range === "week" ? "default" : "ghost"}
-                  className={cn("rounded-full px-4", range === "week" ? "shadow-[var(--shadow-elegant)]" : "text-muted-foreground")}
-                  onClick={() => setRange("week")}
-                >
-                  Últimos 7 dias
-                </Button>
-                <Button
-                  size="sm"
-                  variant={range === "month" ? "default" : "ghost"}
-                  className={cn("rounded-full px-4", range === "month" ? "shadow-[var(--shadow-elegant)]" : "text-muted-foreground")}
-                  onClick={() => setRange("month")}
-                >
-                  Últimos 30 dias
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <ChartContainer config={chartConfig} className="h-[300px]">
-                <LineChart data={activeProductivity} margin={{ left: 12, right: 12 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.4)" />
-                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} fontSize={12} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} fontSize={12} width={40} />
-                  <ChartTooltip cursor={{ strokeDasharray: "4 4" }} content={<ChartTooltipContent indicator="line" />} />
-                  <Line type="monotone" dataKey="lessons" stroke="var(--color-lessons)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} />
-                  <Line type="monotone" dataKey="practice" stroke="var(--color-practice)" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} activeDot={{ r: 6 }} />
-                </LineChart>
-              </ChartContainer>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-border/60 bg-background/70 p-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Tempo médio por sessão</span>
-                    <Badge variant="outline" className="border-primary/40 text-primary">
-                      +12%
-                    </Badge>
-                  </div>
-                  <p className="mt-2 text-lg font-semibold">47 minutos</p>
-                  <p className="text-xs text-muted-foreground">Ideal para manter foco profundo sem sobrecarga.</p>
+            <Card className="border border-border/60 bg-card/90 shadow-[var(--shadow-elegant)]">
+              <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle>Seu ritmo de aprendizado</CardTitle>
+                  <CardDescription>Visualize a evolução entre aulas assistidas e práticas concluídas.</CardDescription>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-background/70 p-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Taxa de conclusão</span>
-                    <Badge variant="outline" className="border-accent/40 text-accent">
-                      +3 aulas
-                    </Badge>
-                  </div>
-                  <p className="mt-2 text-lg font-semibold">82%</p>
-                  <p className="text-xs text-muted-foreground">Documente aprendizados-chave ao fim de cada aula.</p>
+                <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/60 p-1 text-xs">
+                  <Button
+                    size="sm"
+                    variant={range === "week" ? "default" : "ghost"}
+                    className={cn("rounded-full px-4", range === "week" ? "shadow-[var(--shadow-elegant)]" : "text-muted-foreground")}
+                    onClick={() => setRange("week")}
+                  >
+                    Últimos 7 dias
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={range === "month" ? "default" : "ghost"}
+                    className={cn("rounded-full px-4", range === "month" ? "shadow-[var(--shadow-elegant)]" : "text-muted-foreground")}
+                    onClick={() => setRange("month")}
+                  >
+                    Últimos 30 dias
+                  </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-border/60 bg-card/90">
-            <CardHeader className="space-y-1">
-              <CardTitle>Agenda da semana</CardTitle>
-              <CardDescription>Organize-se para aproveitar cada encontro ao vivo.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {upcomingSessions.map((session) => (
-                <div key={session.title} className="rounded-2xl border border-border/60 bg-background/70 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-2">
-                      <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {session.date} • {session.time}
-                      </div>
-                      <h3 className="text-base font-semibold leading-tight">{session.title}</h3>
-                      <p className="text-xs text-muted-foreground">{session.type}</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <ChartContainer config={chartConfig} className="h-[300px]">
+                  <LineChart data={activeProductivity} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.4)" />
+                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} fontSize={12} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} fontSize={12} width={40} />
+                    <ChartTooltip cursor={{ strokeDasharray: "4 4" }} content={<ChartTooltipContent indicator="line" />} />
+                    <Line type="monotone" dataKey="lessons" stroke="var(--color-lessons)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="practice" stroke="var(--color-practice)" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ChartContainer>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-xl border border-border/60 bg-background/70 p-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Tempo médio por sessão</span>
+                      <Badge variant="outline" className="border-primary/40 text-primary">
+                        +12%
+                      </Badge>
                     </div>
-                    <Button size="sm" variant="outline" className="border-primary/40 text-primary">
-                      {session.cta}
-                    </Button>
+                    <p className="mt-2 text-lg font-semibold">47 minutos</p>
+                    <p className="text-xs text-muted-foreground">Ideal para manter foco profundo sem sobrecarga.</p>
+                  </div>
+                  <div className="rounded-xl border border-border/60 bg-background/70 p-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Taxa de conclusão</span>
+                      <Badge variant="outline" className="border-accent/40 text-accent">
+                        +3 aulas
+                      </Badge>
+                    </div>
+                    <p className="mt-2 text-lg font-semibold">82%</p>
+                    <p className="text-xs text-muted-foreground">Documente aprendizados-chave ao fim de cada aula.</p>
                   </div>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        </section>
+              </CardContent>
+            </Card>
 
-        <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-          <Card className="border border-border/60 bg-card/90">
-            <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <CardTitle>Trilhas e recursos premium</CardTitle>
-                <CardDescription>Escolha a trilha ideal para o momento.</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="border-border/60 bg-background/60 text-xs">
-                  Atualizado diariamente
-                </Badge>
-                {progressLoading && (
-                  <Badge variant="outline" className="border-primary/40 bg-primary/10 text-xs text-primary">
-                    Sincronizando progresso...
+            <Card className="border border-border/60 bg-card/90">
+              <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <CardTitle>Trilhas e recursos premium</CardTitle>
+                  <CardDescription>Escolha a trilha ideal para o momento.</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-border/60 bg-background/60 text-xs">
+                    Atualizado diariamente
                   </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="ebook" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2 gap-2 bg-background/60 p-1 md:grid-cols-4">
+                  {progressLoading && (
+                    <Badge variant="outline" className="border-primary/40 bg-primary/10 text-xs text-primary">
+                      Sincronizando progresso...
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="ebook" className="space-y-6">
+                  <TabsList className="grid w-full grid-cols-2 gap-2 bg-background/60 p-1 md:grid-cols-4">
+                    {resourceTabs.map((tab) => (
+                      <TabsTrigger key={tab.value} value={tab.value} className="rounded-lg text-xs md:text-sm">
+                        <tab.icon className="mr-2 h-4 w-4" />
+                        {tab.label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
                   {resourceTabs.map((tab) => (
-                    <TabsTrigger key={tab.value} value={tab.value} className="rounded-lg text-xs md:text-sm">
-                      <tab.icon className="mr-2 h-4 w-4" />
-                      {tab.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                {resourceTabs.map((tab) => (
-                  <TabsContent key={tab.value} value={tab.value}>
-                    {tab.value === "ebook" ? (
-                      <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
+                    <TabsContent key={tab.value} value={tab.value}>
+                      {tab.value === "ebook" ? (
+                        <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
+                          <div className="space-y-4">
+                            {ebookModules.map((module) => {
+                              const isCompleted = ebookProgress[module.id];
+                              const progressKey = `ebook:${module.id}`;
+                              const isSaving = Boolean(progressSaving[progressKey]);
+                              const isDisabled = progressLoading || isSaving;
+                              return (
+                                <div
+                                  key={module.id}
+                                  className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/65 p-4 md:flex-row md:items-center md:justify-between"
+                                >
+                                  <div className="space-y-1">
+                                    <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                                      <FileText className="h-3.5 w-3.5" />
+                                      Capítulo
+                                    </div>
+                                    <h3 className="text-base font-semibold leading-tight">{module.title}</h3>
+                                    <p className="text-xs text-muted-foreground">{module.description}</p>
+                                  </div>
+                                  <div className="flex w-full items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/80 p-3 md:w-auto">
+                                    <a
+                                      href={module.pdfUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-2 text-xs font-medium text-primary"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                      Abrir PDF
+                                    </a>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <Checkbox
+                                        id={module.id}
+                                        checked={isCompleted}
+                                        disabled={isDisabled}
+                                        onCheckedChange={(checked) => {
+                                          void handleModuleToggle(module.id, Boolean(checked));
+                                        }}
+                                        aria-busy={isSaving}
+                                      />
+                                      <label htmlFor={module.id} className="cursor-pointer select-none">
+                                        {isSaving ? "Sincronizando..." : progressLoading ? "Carregando..." : "Concluído"}
+                                      </label>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="rounded-2xl border border-primary/30 bg-primary/10 p-6">
+                            <div className="space-y-3">
+                              <h4 className="text-lg font-semibold text-primary">Checklist rápido</h4>
+                              <p className="text-xs text-primary/80">
+                                Marque sua leitura e mantenha o progresso do certificado sempre visível.
+                              </p>
+                            </div>
+                            <div className="mt-6 space-y-4 text-xs text-primary/80">
+                              <p>
+                                <strong className="text-sm text-primary">{completedModules}</strong> capítulos concluídos de {totalEbookModules}.
+                              </p>
+                              <p>{progressDescription}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : tab.value === "video" ? (
                         <div className="space-y-4">
-                          {ebookModules.map((module) => {
-                            const isCompleted = ebookProgress[module.id];
-                            const progressKey = `ebook:${module.id}`;
+                          {videoModules.map((module) => {
+                            const isCompleted = videoProgress[module.id];
+                            const progressKey = `video:${module.id}`;
                             const isSaving = Boolean(progressSaving[progressKey]);
                             const isDisabled = progressLoading || isSaving;
                             return (
                               <div
                                 key={module.id}
-                                className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/65 p-4 md:flex-row md:items-center md:justify-between"
+                                className="flex flex-col gap-4 rounded-xl border border-border/60 bg-background/65 p-4 md:flex-row md:items-center md:justify-between"
                               >
-                                <div className="space-y-1">
+                                <div className="space-y-2">
                                   <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                                    <FileText className="h-3.5 w-3.5" />
-                                    Capítulo
+                                    <Video className="h-3.5 w-3.5" />
+                                    Aula
                                   </div>
                                   <h3 className="text-base font-semibold leading-tight">{module.title}</h3>
                                   <p className="text-xs text-muted-foreground">{module.description}</p>
                                 </div>
                                 <div className="flex w-full items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/80 p-3 md:w-auto">
-                                  <a
-                                    href={module.pdfUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 text-xs font-medium text-primary"
-                                  >
-                                    <ExternalLink className="h-3.5 w-3.5" />
-                                    Abrir PDF
-                                  </a>
+                                  <Button size="sm" variant="outline" className="border-accent/40 text-accent">
+                                    <PlayCircle className="mr-2 h-4 w-4" />
+                                    Assistir aula
+                                  </Button>
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <Checkbox
                                       id={module.id}
                                       checked={isCompleted}
                                       disabled={isDisabled}
                                       onCheckedChange={(checked) => {
-                                        void handleModuleToggle(module.id, Boolean(checked));
+                                        void handleVideoModuleToggle(module.id, Boolean(checked));
                                       }}
                                       aria-busy={isSaving}
                                     />
                                     <label htmlFor={module.id} className="cursor-pointer select-none">
-                                      {isSaving ? "Sincronizando..." : progressLoading ? "Carregando..." : "Concluído"}
+                                      {isSaving ? "Sincronizando..." : progressLoading ? "Carregando..." : "Concluída"}
                                     </label>
                                   </div>
                                 </div>
@@ -1236,89 +1268,57 @@ const Dashboard = () => {
                             );
                           })}
                         </div>
-                        <div className="rounded-2xl border border-primary/30 bg-primary/10 p-6">
-                          <div className="space-y-3">
-                            <h4 className="text-lg font-semibold text-primary">Checklist rápido</h4>
-                            <p className="text-xs text-primary/80">
-                              Marque sua leitura e mantenha o progresso do certificado sempre visível.
-                            </p>
-                          </div>
-                          <div className="mt-6 space-y-4 text-xs text-primary/80">
-                            <p>
-                              <strong className="text-sm text-primary">{completedModules}</strong> capítulos concluídos de {totalEbookModules}.
-                            </p>
-                            <p>{progressDescription}</p>
+                      ) : (
+                        <div className="rounded-xl border border-border/60 bg-background/70 p-6 shadow-[var(--shadow-elegant)]">
+                          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div className="space-y-2">
+                              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                                <tab.icon className="h-3.5 w-3.5" />
+                                {tab.label}
+                              </div>
+                              <h3 className="text-xl font-semibold">{tab.title}</h3>
+                              <p className="text-sm text-muted-foreground">{tab.description}</p>
+                            </div>
+                            <Button size="sm" className="w-full md:w-auto">
+                              {tab.cta}
+                            </Button>
                           </div>
                         </div>
-                      </div>
-                    ) : tab.value === "video" ? (
-                      <div className="space-y-4">
-                        {videoModules.map((module) => {
-                          const isCompleted = videoProgress[module.id];
-                          const progressKey = `video:${module.id}`;
-                          const isSaving = Boolean(progressSaving[progressKey]);
-                          const isDisabled = progressLoading || isSaving;
-                          return (
-                            <div
-                              key={module.id}
-                              className="flex flex-col gap-4 rounded-xl border border-border/60 bg-background/65 p-4 md:flex-row md:items-center md:justify-between"
-                            >
-                              <div className="space-y-2">
-                                <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                                  <Video className="h-3.5 w-3.5" />
-                                  Aula
-                                </div>
-                                <h3 className="text-base font-semibold leading-tight">{module.title}</h3>
-                                <p className="text-xs text-muted-foreground">{module.description}</p>
-                              </div>
-                              <div className="flex w-full items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/80 p-3 md:w-auto">
-                                <Button size="sm" variant="outline" className="border-accent/40 text-accent">
-                                  <PlayCircle className="mr-2 h-4 w-4" />
-                                  Assistir aula
-                                </Button>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <Checkbox
-                                    id={module.id}
-                                    checked={isCompleted}
-                                    disabled={isDisabled}
-                                    onCheckedChange={(checked) => {
-                                      void handleVideoModuleToggle(module.id, Boolean(checked));
-                                    }}
-                                    aria-busy={isSaving}
-                                  />
-                                  <label htmlFor={module.id} className="cursor-pointer select-none">
-                                    {isSaving ? "Sincronizando..." : progressLoading ? "Carregando..." : "Concluída"}
-                                  </label>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="rounded-xl border border-border/60 bg-background/70 p-6 shadow-[var(--shadow-elegant)]">
-                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                          <div className="space-y-2">
-                            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                              <tab.icon className="h-3.5 w-3.5" />
-                              {tab.label}
-                            </div>
-                            <h3 className="text-xl font-semibold">{tab.title}</h3>
-                            <p className="text-sm text-muted-foreground">{tab.description}</p>
-                          </div>
-                          <Button size="sm" className="w-full md:w-auto">
-                            {tab.cta}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </TabsContent>
-                ))}
-              </Tabs>
-            </CardContent>
-          </Card>
+                      )}
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
 
-          <div className="space-y-6">
+          <aside className="space-y-8">
+            <Card className="border border-border/60 bg-card/90">
+              <CardHeader className="space-y-1">
+                <CardTitle>Agenda da semana</CardTitle>
+                <CardDescription>Organize-se para aproveitar cada encontro ao vivo.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {upcomingSessions.map((session) => (
+                  <div key={session.title} className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {session.date} • {session.time}
+                        </div>
+                        <h3 className="text-base font-semibold leading-tight">{session.title}</h3>
+                        <p className="text-xs text-muted-foreground">{session.type}</p>
+                      </div>
+                      <Button size="sm" variant="outline" className="border-primary/40 text-primary">
+                        {session.cta}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
             <Card className="border border-border/60 bg-card/90">
               <CardHeader>
                 <CardTitle>Reconhecimentos</CardTitle>
@@ -1384,7 +1384,7 @@ const Dashboard = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </aside>
         </section>
 
         <Card className="border border-border/60 bg-card/90">
