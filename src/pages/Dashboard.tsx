@@ -1,9 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import CompletionCertificate from "@/components/dashboard/CompletionCertificate";
+import type { LucideIcon } from "lucide-react";
 import {
   Award,
   BookOpen,
@@ -69,7 +80,21 @@ type VideoModule = {
   youtubeUrl?: string;
 };
 
+type ProfilePlan = "basic" | "complete";
+
+type ResourceTab = {
+  value: "ebook" | "video" | "community" | "mentorship";
+  label: string;
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  cta: string;
+  requiredPlan: ProfilePlan;
+};
+
 type DashboardUser = Pick<User, "id" | "email" | "user_metadata">;
+
+const LOCAL_PROFILE_NAME_KEY = "zero-to-ai-hub:profile-name";
 
 const chartConfig = {
   lessons: {
@@ -263,7 +288,7 @@ const upcomingSessions = [
   },
 ];
 
-const resourceTabs = [
+const resourceTabs: ResourceTab[] = [
   {
     value: "ebook",
     label: "Ebook",
@@ -271,6 +296,7 @@ const resourceTabs = [
     title: "Guia completo e atualizado",
     description: "Baixe os capítulos, marque sua leitura e acompanhe o avanço do plano Ebook IA do Zero.",
     cta: "Ver capítulos",
+    requiredPlan: "basic",
   },
   {
     value: "video",
@@ -279,6 +305,7 @@ const resourceTabs = [
     title: "Trilhas guiadas e curadoria inteligente",
     description: "Aulas curtas com roteiros acionáveis e anotações inteligentes para revisar quando quiser.",
     cta: "Ver aulas",
+    requiredPlan: "complete",
   },
   {
     value: "community",
@@ -287,6 +314,7 @@ const resourceTabs = [
     title: "Networking com especialistas",
     description: "Participe do fórum exclusivo, desafios semanais e feedback dos mentores.",
     cta: "Abrir comunidade",
+    requiredPlan: "complete",
   },
   {
     value: "mentorship",
@@ -295,6 +323,7 @@ const resourceTabs = [
     title: "Agenda personalizada",
     description: "Agende sessões individuais com mentores para acelerar seu plano de estudos.",
     cta: "Reservar horário",
+    requiredPlan: "complete",
   },
 ];
 
@@ -334,6 +363,10 @@ const Dashboard = () => {
   const [profileAccessLoading, setProfileAccessLoading] = useState(isSupabaseConfigured);
   const [accessGranted, setAccessGranted] = useState(!isSupabaseConfigured);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [plan, setPlan] = useState<ProfilePlan>(isSupabaseConfigured ? "basic" : "complete");
+  const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [isSavingName, setIsSavingName] = useState(false);
   const [range, setRange] = useState<ProductivityRange>("week");
   const [ebookProgress, setEbookProgress] = useState<Record<string, boolean>>(() => ({
     ...defaultEbookProgress,
@@ -398,6 +431,21 @@ const Dashboard = () => {
     }
   }, [isSupabaseConfigured]);
 
+  useEffect(() => {
+    if (isSupabaseConfigured) {
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storedName = window.localStorage.getItem(LOCAL_PROFILE_NAME_KEY);
+    if (storedName) {
+      setProfileName(storedName);
+    }
+  }, [isSupabaseConfigured]);
+
   const fetchProfileAccess = useCallback(async () => {
     if (!user?.id) {
       setProfileName(null);
@@ -409,6 +457,7 @@ const Dashboard = () => {
     if (!isSupabaseConfigured) {
       setAccessGranted(true);
       setProfileName(user.user_metadata?.full_name ?? null);
+      setPlan("complete");
       setProfileAccessLoading(false);
       return;
     }
@@ -418,7 +467,7 @@ const Dashboard = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("access_granted, full_name")
+        .select("access_granted, full_name, plan")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -427,8 +476,10 @@ const Dashboard = () => {
       }
 
       const granted = Boolean(data?.access_granted);
+      const fetchedPlan = (data?.plan as ProfilePlan | null) ?? "basic";
       setAccessGranted(granted);
       setProfileName(data?.full_name ?? user.user_metadata?.full_name ?? null);
+      setPlan(fetchedPlan);
     } catch (error) {
       console.error("Falha ao carregar dados de acesso do perfil", error);
       toast.error("Não foi possível validar a liberação do seu acesso agora. Tente novamente em instantes.");
@@ -444,6 +495,100 @@ const Dashboard = () => {
   const handleRefreshAccess = useCallback(() => {
     void fetchProfileAccess();
   }, [fetchProfileAccess]);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    if ((accessGranted || !isSupabaseConfigured) && !profileName?.trim()) {
+      setNameInput("");
+      setIsNameDialogOpen(true);
+    }
+  }, [accessGranted, isSupabaseConfigured, loading, profileName]);
+
+  const handleNameDialogChange = useCallback(
+    (open: boolean) => {
+      if (!open && !profileName?.trim()) {
+        toast.info("Informe seu nome para personalizar o certificado.");
+        return;
+      }
+
+      setIsNameDialogOpen(open);
+
+      if (open) {
+        setNameInput(profileName ?? "");
+      }
+    },
+    [profileName],
+  );
+
+  const handleOpenNameDialog = useCallback(() => {
+    setNameInput(profileName ?? "");
+    setIsNameDialogOpen(true);
+  }, [profileName]);
+
+  const handleScrollToResources = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    document.getElementById("student-resources")?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const handleSaveProfileName = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      const trimmedName = nameInput.trim();
+
+      if (!trimmedName) {
+        toast.error("Digite um nome válido para personalizar o certificado.");
+        return;
+      }
+
+      if (isSupabaseConfigured && !user?.id) {
+        toast.error("Faça login novamente para atualizar seu nome.");
+        return;
+      }
+
+      setIsSavingName(true);
+
+      try {
+        if (isSupabaseConfigured && user?.id) {
+          const { error } = await supabase
+            .from("profiles")
+            .update({ full_name: trimmedName })
+            .eq("user_id", user.id);
+
+          if (error) {
+            throw error;
+          }
+
+          const { error: metadataError } = await supabase.auth.updateUser({
+            data: { full_name: trimmedName },
+          });
+
+          if (metadataError) {
+            console.warn("Falha ao sincronizar metadados do Supabase", metadataError);
+          }
+        } else if (typeof window !== "undefined") {
+          window.localStorage.setItem(LOCAL_PROFILE_NAME_KEY, trimmedName);
+        }
+
+        setProfileName(trimmedName);
+        setNameInput(trimmedName);
+        toast.success("Nome salvo com sucesso! Seu certificado será atualizado.");
+        setIsNameDialogOpen(false);
+      } catch (error) {
+        console.error("Falha ao salvar nome do aluno", error);
+        toast.error("Não foi possível salvar seu nome agora. Tente novamente em instantes.");
+      } finally {
+        setIsSavingName(false);
+      }
+    },
+    [isSupabaseConfigured, nameInput, user],
+  );
 
   useEffect(() => {
     let isActive = true;
@@ -530,6 +675,12 @@ const Dashboard = () => {
     completedVideoModules === totalVideoModules
       ? "Você assistiu a todas as videoaulas disponíveis. Continue revisando os conteúdos favoritos!"
       : `Você assistiu ${completedVideoModules} de ${totalVideoModules} videoaulas. Marque cada aula após concluir.`;
+
+  const isCompletePlan = plan === "complete";
+  const planLabel = isCompletePlan ? "Plano Completo" : "Plano Básico";
+  const planBadgeClass = isCompletePlan
+    ? "border-primary/50 bg-primary/10 text-primary"
+    : "border-muted-foreground/40 bg-muted/10 text-muted-foreground";
 
   const hasCompletedEbook = completedModules === totalEbookModules;
   const hasCompletedVideos = completedVideoModules === totalVideoModules;
@@ -871,8 +1022,8 @@ const Dashboard = () => {
     return "Aluno";
   }, [profileName, user]);
 
-  const quickHighlights = useMemo(
-    () => [
+  const quickHighlights = useMemo(() => {
+    const highlights = [
       {
         id: "ebook",
         title: "Ebook IA do Zero",
@@ -883,7 +1034,10 @@ const Dashboard = () => {
         iconClass: "bg-primary/10 text-primary",
         badgeClass: "border-primary/40 bg-primary/10 text-primary",
       },
-      {
+    ];
+
+    if (isCompletePlan) {
+      highlights.push({
         id: "video",
         title: "Videoaulas guiadas",
         value: `${videoProgressValue}%`,
@@ -892,19 +1046,45 @@ const Dashboard = () => {
         icon: PlayCircle,
         iconClass: "bg-accent/10 text-accent",
         badgeClass: "border-accent/40 bg-accent/10 text-accent",
-      },
-      {
-        id: "streak",
-        title: "Sequência ativa",
-        value: "7 dias",
-        caption: "Rotina consistente",
-        description: "Mantenha blocos curtos de foco para avançar diariamente.",
-        icon: Flame,
-        iconClass: "bg-orange-400/10 text-orange-400",
-        badgeClass: "border-orange-300/40 bg-orange-400/10 text-orange-400",
-      },
-    ],
-    [progressBadgeLabel, progressDescription, progressValue, videoProgressBadgeLabel, videoProgressDescription, videoProgressValue],
+      });
+    } else {
+      highlights.push({
+        id: "video-locked",
+        title: "Videoaulas premium",
+        value: "Bloqueado",
+        caption: "Plano completo",
+        description: "Atualize para o Plano Completo e libere aulas, comunidade e mentorias.",
+        icon: Lock,
+        iconClass: "bg-muted/80 text-muted-foreground",
+        badgeClass: "border-muted-foreground/40 text-muted-foreground",
+      });
+    }
+
+    highlights.push({
+      id: "streak",
+      title: "Sequência ativa",
+      value: "7 dias",
+      caption: "Rotina consistente",
+      description: "Mantenha blocos curtos de foco para avançar diariamente.",
+      icon: Flame,
+      iconClass: "bg-orange-400/10 text-orange-400",
+      badgeClass: "border-orange-300/40 bg-orange-400/10 text-orange-400",
+    });
+
+    return highlights;
+  }, [
+    isCompletePlan,
+    progressBadgeLabel,
+    progressDescription,
+    progressValue,
+    videoProgressBadgeLabel,
+    videoProgressDescription,
+    videoProgressValue,
+  ]);
+
+  const availableResourceTabs = useMemo(
+    () => resourceTabs.filter((tab) => tab.requiredPlan === "basic" || isCompletePlan),
+    [isCompletePlan],
   );
 
   const nextMilestone =
@@ -1007,13 +1187,52 @@ const Dashboard = () => {
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                      <Button size="sm" className="shadow-[var(--shadow-elegant)]">
-                        <PlayCircle className="mr-2 h-4 w-4" />
-                        Continuar última aula
+                      <Badge variant="outline" className={`rounded-full px-3 py-1 text-xs ${planBadgeClass}`}>
+                        {planLabel}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-3 text-xs text-muted-foreground hover:text-primary"
+                        onClick={handleOpenNameDialog}
+                      >
+                        Atualizar nome
                       </Button>
-                      <Button variant="outline" size="sm" className="border-primary/40">
-                        Ver trilha completa
-                      </Button>
+                      {!isCompletePlan && (
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          className="h-8 border-primary/40 px-3 text-xs"
+                        >
+                          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                            Quero plano completo
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {isCompletePlan ? (
+                        <>
+                          <Button size="sm" className="shadow-[var(--shadow-elegant)]">
+                            <PlayCircle className="mr-2 h-4 w-4" />
+                            Continuar última aula
+                          </Button>
+                          <Button variant="outline" size="sm" className="border-primary/40">
+                            Ver trilha completa
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button size="sm" className="shadow-[var(--shadow-elegant)]" onClick={handleScrollToResources}>
+                            <BookOpen className="mr-2 h-4 w-4" />
+                            Abrir capítulos do ebook
+                          </Button>
+                          <Button variant="outline" size="sm" className="border-primary/40" onClick={handleOpenNameDialog}>
+                            Personalizar certificado
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1058,7 +1277,7 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-12 space-y-12">
-        <section className="grid gap-8 2xl:grid-cols-[2.2fr_1fr]">
+        <section className={cn("grid gap-8", isCompletePlan && "2xl:grid-cols-[2.2fr_1fr]")}>
           <div className="space-y-8">
             <CompletionCertificate
               studentName={displayName}
@@ -1069,7 +1288,7 @@ const Dashboard = () => {
               totalModules={totalEbookModules}
             />
 
-            <Card className="border border-border/60 bg-card/90 shadow-[var(--shadow-elegant)]">
+            <Card id="student-resources" className="border border-border/60 bg-card/90 shadow-[var(--shadow-elegant)]">
               <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Seu ritmo de aprendizado</CardTitle>
@@ -1150,14 +1369,14 @@ const Dashboard = () => {
               <CardContent>
                 <Tabs defaultValue="ebook" className="space-y-6">
                   <TabsList className="grid w-full grid-cols-2 gap-2 bg-background/60 p-1 md:grid-cols-4">
-                    {resourceTabs.map((tab) => (
+                    {availableResourceTabs.map((tab) => (
                       <TabsTrigger key={tab.value} value={tab.value} className="rounded-lg text-xs md:text-sm">
                         <tab.icon className="mr-2 h-4 w-4" />
                         {tab.label}
                       </TabsTrigger>
                     ))}
                   </TabsList>
-                  {resourceTabs.map((tab) => (
+                  {availableResourceTabs.map((tab) => (
                     <TabsContent key={tab.value} value={tab.value}>
                       {tab.value === "ebook" ? (
                         <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
@@ -1288,146 +1507,218 @@ const Dashboard = () => {
                     </TabsContent>
                   ))}
                 </Tabs>
+                {!isCompletePlan && (
+                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
+                          <Lock className="h-3.5 w-3.5" />
+                          Recursos premium bloqueados
+                        </div>
+                        <p className="text-sm text-primary/80">
+                          Videoaulas, comunidade e mentorias fazem parte do Plano Completo. Atualize seu acesso quando quiser.
+                        </p>
+                      </div>
+                      <Button asChild size="sm" className="w-full md:w-auto shadow-[var(--shadow-elegant)]">
+                        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                          Falar com suporte
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
 
-          <aside className="space-y-8">
-            <Card className="border border-border/60 bg-card/90">
-              <CardHeader className="space-y-1">
-                <CardTitle>Agenda da semana</CardTitle>
-                <CardDescription>Organize-se para aproveitar cada encontro ao vivo.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                {upcomingSessions.map((session) => (
-                  <div key={session.title} className="rounded-2xl border border-border/60 bg-background/70 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-2">
-                        <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {session.date} • {session.time}
-                        </div>
-                        <h3 className="text-base font-semibold leading-tight">{session.title}</h3>
-                        <p className="text-xs text-muted-foreground">{session.type}</p>
-                      </div>
-                      <Button size="sm" variant="outline" className="border-primary/40 text-primary">
-                        {session.cta}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card className="border border-border/60 bg-card/90">
-              <CardHeader>
-                <CardTitle>Reconhecimentos</CardTitle>
-                <CardDescription>Pequenas vitórias que aceleram sua evolução.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {achievements.map((item) => (
-                  <div key={item.title} className="flex items-start gap-4 rounded-xl border border-border/50 bg-background/70 p-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                      <item.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold">{item.title}</p>
-                      <p className="text-lg font-semibold text-primary">{item.value}</p>
-                      <p className="text-xs text-muted-foreground">{item.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card className="border border-border/60 bg-card/90">
-              <CardHeader>
-                <CardTitle>Plano de evolução</CardTitle>
-                <CardDescription>Enxergue, em uma linha, o que já foi desbloqueado.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {learningPath.map((step) => (
-                    <div
-                      key={step.title}
-                      className={cn(
-                        "rounded-2xl border p-5",
-                        step.status === "completed" && "border-primary/40 bg-primary/5",
-                        step.status === "in-progress" && "border-accent/40 bg-accent/5 shadow-[var(--shadow-elegant)]",
-                        step.status === "upcoming" && "border-border/60 bg-background/70",
-                      )}
-                    >
-                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <div className="space-y-1.5">
-                          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                            {step.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
-                            {step.status === "in-progress" && <PlayCircle className="h-3.5 w-3.5 text-accent" />}
-                            {step.status === "upcoming" && <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
-                            {step.status === "completed" ? "Concluído" : step.status === "in-progress" ? "Em andamento" : "Em breve"}
+          {isCompletePlan && (
+            <aside className="space-y-8">
+              <Card className="border border-border/60 bg-card/90">
+                <CardHeader className="space-y-1">
+                  <CardTitle>Agenda da semana</CardTitle>
+                  <CardDescription>Organize-se para aproveitar cada encontro ao vivo.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {upcomingSessions.map((session) => (
+                    <div key={session.title} className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-2">
+                          <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {session.date} • {session.time}
                           </div>
-                          <h3 className="text-lg font-semibold">{step.title}</h3>
-                          <p className="text-sm text-muted-foreground">{step.description}</p>
+                          <h3 className="text-base font-semibold leading-tight">{session.title}</h3>
+                          <p className="text-xs text-muted-foreground">{session.type}</p>
                         </div>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "w-fit border-foreground/10 text-xs",
-                            step.status === "completed" && "border-primary/50 text-primary",
-                            step.status === "in-progress" && "border-accent/40 text-accent",
-                          )}
-                        >
-                          {step.highlight}
-                        </Badge>
+                        <Button size="sm" variant="outline" className="border-primary/40 text-primary">
+                          {session.cta}
+                        </Button>
                       </div>
                     </div>
                   ))}
-                </div>
-              </CardContent>
-            </Card>
-          </aside>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-border/60 bg-card/90">
+                <CardHeader>
+                  <CardTitle>Reconhecimentos</CardTitle>
+                  <CardDescription>Pequenas vitórias que aceleram sua evolução.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {achievements.map((item) => (
+                    <div key={item.title} className="flex items-start gap-4 rounded-xl border border-border/50 bg-background/70 p-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                        <item.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold">{item.title}</p>
+                        <p className="text-lg font-semibold text-primary">{item.value}</p>
+                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card className="border border-border/60 bg-card/90">
+                <CardHeader>
+                  <CardTitle>Plano de evolução</CardTitle>
+                  <CardDescription>Enxergue, em uma linha, o que já foi desbloqueado.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {learningPath.map((step) => (
+                      <div
+                        key={step.title}
+                        className={cn(
+                          "rounded-2xl border p-5",
+                          step.status === "completed" && "border-primary/40 bg-primary/5",
+                          step.status === "in-progress" && "border-accent/40 bg-accent/5 shadow-[var(--shadow-elegant)]",
+                          step.status === "upcoming" && "border-border/60 bg-background/70",
+                        )}
+                      >
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                          <div className="space-y-1.5">
+                            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                              {step.status === "completed" && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                              {step.status === "in-progress" && <PlayCircle className="h-3.5 w-3.5 text-accent" />}
+                              {step.status === "upcoming" && <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
+                              {step.status === "completed" ? "Concluído" : step.status === "in-progress" ? "Em andamento" : "Em breve"}
+                            </div>
+                            <h3 className="text-lg font-semibold">{step.title}</h3>
+                            <p className="text-sm text-muted-foreground">{step.description}</p>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "w-fit border-foreground/10 text-xs",
+                              step.status === "completed" && "border-primary/50 text-primary",
+                              step.status === "in-progress" && "border-accent/40 text-accent",
+                            )}
+                          >
+                            {step.highlight}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </aside>
+          )}
         </section>
 
-        <Card className="border border-border/60 bg-card/90">
-          <CardHeader>
-            <CardTitle>Últimas novidades</CardTitle>
-            <CardDescription>Atualizações que podem impulsionar seus próximos passos.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-primary/30 bg-primary/10 p-5">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
-                <Sparkles className="h-3.5 w-3.5" />
-                Atualização liberada
+        {isCompletePlan ? (
+          <Card className="border border-border/60 bg-card/90">
+            <CardHeader>
+              <CardTitle>Últimas novidades</CardTitle>
+              <CardDescription>Atualizações que podem impulsionar seus próximos passos.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-primary/30 bg-primary/10 p-5">
+                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-primary">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Atualização liberada
+                </div>
+                <p className="mt-3 text-sm font-semibold text-primary-foreground">
+                  Biblioteca de prompts estratégicos disponível para download.
+                </p>
+                <p className="mt-2 text-xs text-primary/80">
+                  Acesse em Recursos premium → Comunidade para salvar seus favoritos.
+                </p>
               </div>
-              <p className="mt-3 text-sm font-semibold text-primary-foreground">
-                Biblioteca de prompts estratégicos disponível para download.
-              </p>
-              <p className="mt-2 text-xs text-primary/80">
-                Acesse em Recursos premium → Comunidade para salvar seus favoritos.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                <Compass className="h-3.5 w-3.5" />
-                Comunidade
+              <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                  <Compass className="h-3.5 w-3.5" />
+                  Comunidade
+                </div>
+                <p className="mt-3 text-sm font-semibold">Desafio semanal aberto</p>
+                <p className="text-xs text-muted-foreground">
+                  Entregue seu protótipo até sexta-feira e receba feedback direto dos mentores.
+                </p>
               </div>
-              <p className="mt-3 text-sm font-semibold">Desafio semanal aberto</p>
-              <p className="text-xs text-muted-foreground">
-                Entregue seu protótipo até sexta-feira e receba feedback direto dos mentores.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                <MessageSquare className="h-3.5 w-3.5" />
-                Fórum
+              <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  Fórum
+                </div>
+                <p className="mt-3 text-sm font-semibold">Debate sobre monetização</p>
+                <p className="text-xs text-muted-foreground">
+                  Aprenda com colegas que fecharam as primeiras vendas usando automações de IA.
+                </p>
               </div>
-              <p className="mt-3 text-sm font-semibold">Debate sobre monetização</p>
-              <p className="text-xs text-muted-foreground">
-                Aprenda com colegas que fecharam as primeiras vendas usando automações de IA.
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border border-dashed border-primary/40 bg-primary/5">
+            <CardHeader>
+              <CardTitle>Desbloqueie novidades exclusivas</CardTitle>
+              <CardDescription>
+                Recursos da comunidade, mentorias e trilhas em vídeo ficam disponíveis no Plano Completo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 text-sm text-primary/80">
+              <p>
+                Atualize seu plano quando desejar e acesse eventos ao vivo, desafios semanais e suporte direto com especialistas.
               </p>
-            </div>
-          </CardContent>
-        </Card>
+              <Button asChild className="w-full shadow-[var(--shadow-elegant)] md:w-fit">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  Conversar com o suporte e migrar de plano
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </main>
+
+      <Dialog open={isNameDialogOpen} onOpenChange={handleNameDialogChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Personalize seu certificado</DialogTitle>
+            <DialogDescription>
+              Digite como deseja que seu nome apareça no certificado digital e nas áreas do aluno.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveProfileName} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="student-full-name">Nome completo</Label>
+              <Input
+                id="student-full-name"
+                value={nameInput}
+                onChange={(event) => setNameInput(event.target.value)}
+                placeholder="Como deseja exibir no certificado"
+                autoComplete="name"
+                disabled={isSavingName}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={isSavingName || !nameInput.trim()}>
+                {isSavingName ? "Salvando..." : "Salvar nome"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
