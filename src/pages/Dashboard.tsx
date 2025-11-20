@@ -676,6 +676,8 @@ const Dashboard = () => {
       ? "Você assistiu a todas as videoaulas disponíveis. Continue revisando os conteúdos favoritos!"
       : `Você assistiu ${completedVideoModules} de ${totalVideoModules} videoaulas. Marque cada aula após concluir.`;
 
+  const certificateProgress = Math.max(progressValue, videoProgressValue);
+
   const isCompletePlan = plan === "complete";
   const planLabel = isCompletePlan ? "Plano Completo" : "Plano Básico";
   const planBadgeClass = isCompletePlan
@@ -1238,6 +1240,7 @@ const Dashboard = () => {
         icon: BookOpen,
         iconClass: "bg-primary/10 text-primary",
         badgeClass: "border-primary/40 bg-primary/10 text-primary",
+        progress: progressValue,
       },
     ];
 
@@ -1251,6 +1254,7 @@ const Dashboard = () => {
         icon: PlayCircle,
         iconClass: "bg-accent/10 text-accent",
         badgeClass: "border-accent/40 bg-accent/10 text-accent",
+        progress: videoProgressValue,
       });
     } else {
       highlights.push({
@@ -1358,6 +1362,11 @@ const Dashboard = () => {
     <div className="relative min-h-screen bg-background" style={{ background: "var(--dashboard-background)" }}>
       <header className="relative overflow-hidden border-b border-border/40 bg-gradient-to-br from-background via-primary/10 to-background">
         <div className="pointer-events-none absolute inset-0 opacity-70" style={{ background: "radial-gradient(circle at top right, rgba(56,97,251,0.18), transparent 55%)" }} />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-70"
+          style={{ background: "radial-gradient(circle at 20% 20%, rgba(56,189,248,0.12), transparent 45%)" }}
+        />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-background via-background/80 to-transparent" />
         <div className="relative container mx-auto px-4 py-12">
           <div className="flex flex-col gap-10">
             <div className="flex flex-col gap-6">
@@ -1458,9 +1467,131 @@ const Dashboard = () => {
               </div>
             </div>
 
+            <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+              <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-background to-background p-6 shadow-[var(--shadow-elegant)]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-primary">Certificado Zero to AI</p>
+                    <h2 className="text-xl font-semibold leading-tight text-foreground">
+                      {certificateUnlocked ? "Pronto para emissão" : "Falta pouco para liberar o certificado"}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {certificateUnlocked
+                        ? "Gere o PDF, valide o código e compartilhe o resultado da sua jornada."
+                        : "Complete o ebook ou a trilha de videoaulas para desbloquear o certificado digital."}
+                    </p>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="rounded-full border-primary/50 bg-background/70 text-xs font-semibold text-primary"
+                  >
+                    {certificateUnlocked ? "Disponível" : `${certificateProgress}% concluído`}
+                  </Badge>
+                </div>
+                <div className="mt-4 space-y-3">
+                  <Progress value={certificateProgress} className="h-2 bg-background/60" />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-border/60 bg-background/70 p-3">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Ebook IA do Zero</span>
+                        <Badge variant="outline" className="border-primary/40 text-primary">
+                          {progressBadgeLabel}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 text-sm font-semibold text-foreground">{progressValue}% concluído</p>
+                      <p className="text-xs text-muted-foreground">{progressDescription}</p>
+                    </div>
+                    <div className="rounded-xl border border-border/60 bg-background/70 p-3">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Trilha em vídeo</span>
+                        <Badge variant="outline" className="border-accent/40 text-accent">
+                          {isCompletePlan ? videoProgressBadgeLabel : "Plano completo"}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 text-sm font-semibold text-foreground">
+                        {isCompletePlan ? `${videoProgressValue}% concluído` : "Conteúdo premium"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {isCompletePlan
+                          ? videoProgressDescription
+                          : "Migre de plano para liberar videoaulas, comunidade e mentorias."}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      className="shadow-[var(--shadow-elegant)]"
+                      onClick={certificateUnlocked ? handleDownloadCertificate : handleScrollToResources}
+                    >
+                      {certificateUnlocked ? (
+                        <Award className="mr-2 h-4 w-4" />
+                      ) : (
+                        <BookOpen className="mr-2 h-4 w-4" />
+                      )}
+                      {certificateUnlocked ? "Emitir certificado" : "Continuar estudos"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-border/60 text-muted-foreground hover:text-primary"
+                      onClick={handleScrollToResources}
+                    >
+                      Ver recursos prioritários
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-border/60 bg-background/80 p-6 shadow-[var(--shadow-elegant)]">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ritual de estudo</p>
+                    <h3 className="text-lg font-semibold text-foreground">Rotina guiada para avançar</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Combine blocos curtos, revisão rápida e feedback ao vivo para manter constância.
+                    </p>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Clock className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="mt-4 space-y-3 text-sm text-foreground">
+                  <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-background/70 p-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-primary" />
+                    <div className="space-y-1">
+                      <p className="font-medium">Blocos de foco de 45 minutos</p>
+                      <p className="text-xs text-muted-foreground">Use o timer e anote 3 insights práticos ao final de cada sessão.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-background/70 p-3">
+                    <Compass className="mt-0.5 h-4 w-4 text-accent" />
+                    <div className="space-y-1">
+                      <p className="font-medium">Selecione um próximo passo</p>
+                      <p className="text-xs text-muted-foreground">Escolha um capítulo ou aula para fechar hoje e marque como concluído.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-background/70 p-3">
+                    <MessageSquare className="mt-0.5 h-4 w-4 text-primary" />
+                    <div className="space-y-1">
+                      <p className="font-medium">Valide dúvidas rapidamente</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isCompletePlan
+                          ? "Leve perguntas para a comunidade ou mentorias e receba feedback direto."
+                          : "Envie perguntas pelo WhatsApp de suporte e avance sem travar."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {quickHighlights.map((item) => (
-                <div key={item.id} className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-background/80 p-5 shadow-sm">
+                <div
+                  key={item.id}
+                  className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-background/85 p-5 shadow-[var(--shadow-elegant)]"
+                >
                   <div className="flex items-center justify-between gap-4">
                     <div className={`flex h-11 w-11 items-center justify-center rounded-full ${item.iconClass}`}>
                       <item.icon className="h-5 w-5" />
@@ -1469,9 +1600,12 @@ const Dashboard = () => {
                       {item.caption}
                     </Badge>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground">{item.title}</p>
                     <p className="text-3xl font-semibold tracking-tight">{item.value}</p>
+                    {typeof item.progress === "number" && (
+                      <Progress value={item.progress} className="h-2 bg-background/60" />
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">{item.description}</p>
                 </div>
